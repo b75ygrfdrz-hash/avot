@@ -2,7 +2,6 @@ import React from 'react';
 import { Header } from './components/Header.jsx';
 import { Home, PerekPicker } from './components/Home.jsx';
 import { LeftRail } from './components/LeftRail.jsx';
-import { MesorahChain } from './components/MesorahChain.jsx';
 import { Onboarding } from './components/Onboarding.jsx';
 import { Reader } from './components/Reader.jsx';
 import { RightPanel } from './components/RightPanel.jsx';
@@ -81,9 +80,19 @@ const App = () => {
   useE(() => { localStorage.setItem('avot.wordhover.v1', String(showWordHover)); }, [showWordHover]);
   useE(() => { localStorage.setItem(STORAGE_KEYS.highlights, JSON.stringify(highlights)); }, [highlights]);
 
-  // Apply dark mode class
+  // Apply dark mode class, with a smooth one-shot color transition on toggle
+  const themeFirstRun = useR(true);
   useE(() => {
-    document.documentElement.classList.toggle('dark', dark);
+    const html = document.documentElement;
+    if (themeFirstRun.current) {
+      themeFirstRun.current = false;
+      html.classList.toggle('dark', dark);
+      return;
+    }
+    html.classList.add('theme-transition');
+    html.classList.toggle('dark', dark);
+    const t = setTimeout(() => html.classList.remove('theme-transition'), 480);
+    return () => clearTimeout(t);
   }, [dark]);
 
   // Initial route — read on first paint
@@ -344,7 +353,6 @@ const App = () => {
         </>
       ) : (
         <>
-          <MesorahChain mishnah={mishnah} perek={perek} onNavigate={jumpTo} />
           <div className={`main ${railCollapsed ? 'rail-collapsed' : ''}`}>
         <LeftRail data={data} perekIdx={perekIdx} mishnahIdx={mishnahIdx}
           setPerekIdx={setPerekIdx} setMishnahIdx={setMishnahIdx}

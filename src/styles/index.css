@@ -6594,3 +6594,79 @@ html.dark { --accent: #C69A30; --accent-bright: #D4A444; --accent-pale: #F5E8C8;
 .settings-label { font-weight: 600; font-size: 13px; }
 .settings-val { color: var(--ink-soft); font-size: 13px; font-family: var(--mono); }
 
+/* ============================================
+   Design updates — rabbi info button, smooth theme switch
+   ============================================ */
+
+/* Attribution becomes a row: name + info button beside it */
+.mishnah-header .attribution {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.attribution-name {
+  text-align: right;
+  min-width: 0;
+}
+
+/* Info button beside the rabbi's name */
+.rabbi-info-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--muted);
+  transition: background-color .18s ease, border-color .18s ease,
+              color .18s ease, transform .18s ease;
+}
+.rabbi-info-btn:hover {
+  color: var(--accent-text, var(--gold));
+  border-color: var(--accent, var(--gold));
+  background: var(--paper-hover);
+  transform: translateY(-1px);
+}
+.rabbi-info-btn.open {
+  color: var(--accent-text, var(--gold));
+  border-color: var(--accent, var(--gold));
+  background: var(--accent-pale, var(--paper-hover));
+}
+html.dark .rabbi-info-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+}
+html.dark .rabbi-info-btn:hover,
+html.dark .rabbi-info-btn.open {
+  color: var(--gold-text);
+  border-color: var(--gold-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Reader toolbar — the four layout options grouped as a segmented control */
+.layout-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  background: var(--bg-deep);
+  border-radius: 999px;
+}
+html.dark .layout-segmented {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Smooth one-shot color transition when toggling dark mode */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color .45s ease, border-color .45s ease,
+              color .45s ease, fill .45s ease, stroke .45s ease,
+              box-shadow .45s ease !important;
+}
+

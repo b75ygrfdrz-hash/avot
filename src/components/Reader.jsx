@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
+import { MESORAH_CHAIN, NodePopover, findActiveIdx } from './MesorahChain.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -13,6 +14,21 @@ const useS_o = useState, useE_o = useEffect;
 
 const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekIdx, perakim, onSelection, highlights, onHighlightClick, layout, setLayout, showWordHover, setShowWordHover, onShareQuote, onSourceSheet, dropcap }) => {
   const textRef = useRef(null);
+
+  // Rabbi info — popover anchored to a button beside the attribution name
+  const rabbiBtnRef = useRef(null);
+  const [rabbiOpen, setRabbiOpen] = useState(false);
+  const rabbiIdx = findActiveIdx(mishnah.attribution?.en || '', perek.num, mishnah.num);
+  const rabbiNode = rabbiIdx >= 0 ? MESORAH_CHAIN[rabbiIdx] : null;
+  useEffect(() => { setRabbiOpen(false); }, [perekIdx, mishnahIdx]);
+  const navigateToRef = (perekNum, mishnahNum) => {
+    const pIdx = perakim.findIndex(p => p.num === perekNum);
+    if (pIdx < 0) return;
+    const mIdx = perakim[pIdx].mishnayot.findIndex(m => m.num === mishnahNum);
+    if (mIdx < 0) return;
+    setPerekIdx(pIdx);
+    setMishnahIdx(mIdx);
+  };
 
   // Wrap selected ranges with highlight spans
   const renderEnglishWithHighlights = (text) => {
@@ -93,12 +109,34 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
             <span>{mishnah.num}</span>
           </div>
           <div className="attribution">
-            <div className="he">{mishnah.attribution.he}</div>
-            <div className="en">{mishnah.attribution.en}</div>
+            <div className="attribution-name">
+              <div className="he">{mishnah.attribution.he}</div>
+              <div className="en">{mishnah.attribution.en}</div>
+            </div>
+            {rabbiNode && (
+              <button
+                ref={rabbiBtnRef}
+                className={`rabbi-info-btn ${rabbiOpen ? 'open' : ''}`}
+                onClick={() => setRabbiOpen(o => !o)}
+                data-tip={`About ${rabbiNode.nameEn}`}
+                data-tip-pos="bottom"
+                aria-label={`About ${rabbiNode.nameEn}`}>
+                <Icon name="info" size={17} />
+              </button>
+            )}
           </div>
         </div>
 
+        {rabbiOpen && rabbiNode && (
+          <NodePopover
+            node={rabbiNode}
+            anchor={rabbiBtnRef.current}
+            onClose={() => setRabbiOpen(false)}
+            onNavigate={navigateToRef} />
+        )}
+
         <div className="text-toolbar">
+          <div className="layout-segmented">
           <button onClick={() => setLayout('stacked')} className={layout === 'stacked' ? 'active' : ''} data-tip="Hebrew above, English below">
             <Icon name="menu" size={11} /> Stacked
           </button>
@@ -111,6 +149,7 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
           <button onClick={() => setLayout('english')} className={layout === 'english' ? 'active' : ''} data-tip="English translation only">
             <span style={{fontWeight:600}}>A</span> English
           </button>
+          </div>
           <div className="divider" />
           <button onClick={() => setShowWordHover(!showWordHover)} className={showWordHover ? 'active' : ''} data-tip="Hover any Hebrew word for translation">
             <Icon name="eye" size={11} /> Word-by-word

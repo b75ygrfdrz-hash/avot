@@ -97,7 +97,7 @@ const ScreenChoose = ({ mode, setMode, onContinue }) => (
     <h2 className="onb-heading">How would you like to learn?</h2>
     <p className="onb-sub">Choose a mode — you can switch any time.</p>
     <div className="onb-cards">
-      <button className={`onb-card adult ${mode === 'adult' ? 'selected' : ''}`} onClick={() => setMode('adult')}>
+      <button className={`onb-card adult ${mode === 'adult' ? 'selected' : ''}`} onClick={() => { setMode('adult'); setTimeout(onContinue, 220); }}>
         <div className="onb-card-icon">
           <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 8 L20 8 L20 34 L5 34 Z" />
@@ -113,7 +113,7 @@ const ScreenChoose = ({ mode, setMode, onContinue }) => (
         <div className="onb-card-title">For Adults</div>
         <div className="onb-card-desc">Hebrew text, classical commentary, AI chevruta, highlights & notes.</div>
       </button>
-      <button className={`onb-card kids ${mode === 'kids' ? 'selected' : ''}`} onClick={() => setMode('kids')}>
+      <button className={`onb-card kids ${mode === 'kids' ? 'selected' : ''}`} onClick={() => { setMode('kids'); setTimeout(onContinue, 220); }}>
         <div className="onb-card-icon">
           <svg viewBox="0 0 40 40" width="36" height="36" fill="currentColor">
             <polygon points="20 4 24.5 14.5 36 16 27.5 24 30 35.5 20 29.5 10 35.5 12.5 24 4 16 15.5 14.5" />
@@ -123,12 +123,6 @@ const ScreenChoose = ({ mode, setMode, onContinue }) => (
         <div className="onb-card-desc">Stories, illustrations, word games, and stars for learning.</div>
       </button>
     </div>
-    <button className="onb-btn" disabled={!mode} onClick={onContinue}>
-      Continue
-      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="3" y1="10" x2="16" y2="10" /><polyline points="12 6 16 10 12 14" />
-      </svg>
-    </button>
   </div>
 );
 

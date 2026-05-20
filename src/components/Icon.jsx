@@ -49,6 +49,7 @@ const Icon = ({ name, size = 16 }) => {
     cards: <><rect x="3" y="6" width="11" height="12" rx="1" /><rect x="6" y="3" width="11" height="12" rx="1" /></>,
     eye: <><path d="M2 10 C4 6 7 4 10 4 C13 4 16 6 18 10 C16 14 13 16 10 16 C7 16 4 14 2 10 Z" /><circle cx="10" cy="10" r="2.5" /></>,
     check: <polyline points="4 10 8 14 16 6" />,
+    info: <><circle cx="10" cy="10" r="7.5" /><line x1="10" y1="9" x2="10" y2="14" /><line x1="10" y1="6.3" x2="10" y2="6.5" /></>,
   };
   return (
     <svg viewBox="0 0 20 20" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
