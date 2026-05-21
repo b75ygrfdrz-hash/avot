@@ -33,14 +33,32 @@ const STORAGE_KEYS = {
   dark: 'avot.dark.v1',
 };
 
+// Shown when the current perek has no mishnayot loaded yet
+const EmptyChapter = ({ perek, onGoToStart }) => (
+  <div className="empty-chapter">
+    <div className="empty-chapter-inner">
+      <div className="empty-chapter-eyebrow">{perek?.title?.he || `פרק ${perek?.num || ''}`}</div>
+      <h2 className="empty-chapter-title">This chapter isn't here yet</h2>
+      <p className="empty-chapter-text">
+        {perek?.title?.en || `Chapter ${perek?.num || ''}`} hasn't been added to the
+        library yet. Chapter 1 is fully available to learn.
+      </p>
+      <button className="empty-chapter-btn" onClick={onGoToStart}>Go to Chapter 1</button>
+    </div>
+  </div>
+);
+
 const App = () => {
   const data = window.PIRKEI_AVOT;
-  const savedPos = JSON.parse(localStorage.getItem(STORAGE_KEYS.pos) || '{"p":0,"m":0}');
+  const savedPos = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.pos) || '{"p":0,"m":0}'); }
+    catch { return { p: 0, m: 0 }; }
+  })();
 
   const [onboarded, setOnboarded] = useS(localStorage.getItem('avot.onboarded.v1') === 'true');
   const [showHome, setShowHome] = useS(true);
-  const [perekIdx, setPerekIdx] = useS(savedPos.p);
-  const [mishnahIdx, setMishnahIdx] = useS(savedPos.m);
+  const [perekIdx, setPerekIdx] = useS(Math.min(Math.max(0, savedPos.p | 0), data.perakim.length - 1));
+  const [mishnahIdx, setMishnahIdx] = useS(Math.max(0, savedPos.m | 0));
   const [mode, setMode] = useS(localStorage.getItem(STORAGE_KEYS.mode) || 'adult');
   const [layout, setLayout] = useS(localStorage.getItem(STORAGE_KEYS.layout) || 'stacked');
   const [showWordHover, setShowWordHover] = useS(localStorage.getItem('avot.wordhover.v1') !== 'false');
@@ -70,8 +88,9 @@ const App = () => {
   const [railCollapsed, setRailCollapsed] = useS(localStorage.getItem('avot.railCollapsed.v1') === 'true');
   const [showPicker, setShowPicker] = useS(false);
 
-  const perek = data.perakim[perekIdx];
-  const mishnah = perek.mishnayot[mishnahIdx] || perek.mishnayot[0];
+  const perek = data.perakim[perekIdx] || data.perakim[0];
+  const mishnah = perek.mishnayot[mishnahIdx] || perek.mishnayot[0] || null;
+  const chapterEmpty = !mishnah;
 
   // Persist
   useE(() => { localStorage.setItem(STORAGE_KEYS.pos, JSON.stringify({p: perekIdx, m: mishnahIdx})); }, [perekIdx, mishnahIdx]);  useE(() => { localStorage.setItem(STORAGE_KEYS.mode, mode); }, [mode]);
@@ -117,7 +136,7 @@ const App = () => {
   useE(() => {
     if (!window.AvotRoutes) return;
     if (showHome) AvotRoutes.home();
-    else AvotRoutes.update(perek.num, mishnah.num, { view: layout });
+    else if (mishnah) AvotRoutes.update(perek.num, mishnah.num, { view: layout });
   }, [showHome, perekIdx, mishnahIdx, layout]);
 
   // React to manual hash changes (back/forward, paste)
@@ -156,11 +175,19 @@ const App = () => {
     if (showHome || mode === 'kids') return;
     const onLeft = () => {
       if (mishnahIdx < perek.mishnayot.length - 1) setMishnahIdx(i => i + 1);
-      else if (perekIdx < data.perakim.length - 1) { setPerekIdx(perekIdx + 1); setMishnahIdx(0); }
+      else {
+        for (let p = perekIdx + 1; p < data.perakim.length; p++) {
+          if (data.perakim[p].mishnayot.length) { setPerekIdx(p); setMishnahIdx(0); break; }
+        }
+      }
     };
     const onRight = () => {
       if (mishnahIdx > 0) setMishnahIdx(i => i - 1);
-      else if (perekIdx > 0) { const prev = data.perakim[perekIdx - 1]; setPerekIdx(perekIdx - 1); setMishnahIdx(Math.max(0, prev.mishnayot.length - 1)); }
+      else {
+        for (let p = perekIdx - 1; p >= 0; p--) {
+          if (data.perakim[p].mishnayot.length) { setPerekIdx(p); setMishnahIdx(data.perakim[p].mishnayot.length - 1); break; }
+        }
+      }
     };
     window.addEventListener('avot:swipe-left', onLeft);
     window.addEventListener('avot:swipe-right', onRight);
@@ -264,7 +291,7 @@ const App = () => {
     setEditingHl(null);
   };
 
-  const lastReadCard = perekIdx > 0 || mishnahIdx > 0 ? {
+  const lastReadCard = mishnah && (perekIdx > 0 || mishnahIdx > 0) ? {
     perek: perek.num,
     mishnah: mishnah.num,
     attribution: mishnah.attribution.en,
@@ -299,11 +326,15 @@ const App = () => {
           onAdmin={() => setShowAdmin(true)}
           onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
           dark={dark} setDark={setDark} />
-        <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
-          mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
-          onColoring={() => setShowColoring(true)}
-          onParentDash={() => setShowParentDash(true)}
-        />
+        {chapterEmpty ? (
+          <EmptyChapter perek={perek} onGoToStart={() => jumpTo(1, 1)} />
+        ) : (
+          <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
+            mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
+            onColoring={() => setShowColoring(true)}
+            onParentDash={() => setShowParentDash(true)}
+          />
+        )}
         {showParentDash && <ParentDashboard onClose={() => setShowParentDash(false)} />}
         {showColoring && <ColoringPage mishnah={mishnah} onClose={() => setShowColoring(false)} />}
         {showSearch && <SearchOverlay data={data} onClose={() => setShowSearch(false)} onNavigate={(p, m) => {
@@ -340,7 +371,7 @@ const App = () => {
               lastRead={lastReadCard} onResume={() => {}}
               onAdmin={() => setShowAdmin(true)} />
             <Home data={data}
-              lastRead={(perekIdx > 0 || mishnahIdx > 0) ? {
+              lastRead={mishnah && (perekIdx > 0 || mishnahIdx > 0) ? {
                 perek: perek.num,
                 mishnah: mishnah.num,
                 attribution: mishnah.attribution.en,
@@ -358,20 +389,26 @@ const App = () => {
           setPerekIdx={setPerekIdx} setMishnahIdx={setMishnahIdx}
           lastRead={lastReadCard} onResume={() => {}}
           onAdmin={() => setShowAdmin(true)} />
-        <Reader perek={perek} mishnah={mishnah}
-          mishnahIdx={mishnahIdx} perekIdx={perekIdx}
-          setMishnahIdx={setMishnahIdx} setPerekIdx={setPerekIdx}
-          perakim={data.perakim}
-          onSelection={onSelection}
-          highlights={highlights}
-          onHighlightClick={onHighlightClick}
-          layout={layout} setLayout={setLayout}
-          showWordHover={showWordHover} setShowWordHover={setShowWordHover}
-          onShareQuote={() => setShowQuote(true)}
-          onSourceSheet={() => setShowSheet(true)}
-          dropcap={dropcap}
-        />
-        <RightPanel mishnah={mishnah} perek={perek} highlights={highlights} />
+        {chapterEmpty ? (
+          <EmptyChapter perek={perek} onGoToStart={() => jumpTo(1, 1)} />
+        ) : (
+          <>
+            <Reader perek={perek} mishnah={mishnah}
+              mishnahIdx={mishnahIdx} perekIdx={perekIdx}
+              setMishnahIdx={setMishnahIdx} setPerekIdx={setPerekIdx}
+              perakim={data.perakim}
+              onSelection={onSelection}
+              highlights={highlights}
+              onHighlightClick={onHighlightClick}
+              layout={layout} setLayout={setLayout}
+              showWordHover={showWordHover} setShowWordHover={setShowWordHover}
+              onShareQuote={() => setShowQuote(true)}
+              onSourceSheet={() => setShowSheet(true)}
+              dropcap={dropcap}
+            />
+            <RightPanel mishnah={mishnah} perek={perek} highlights={highlights} />
+          </>
+        )}
       </div>
         </>
       )}
@@ -407,9 +444,9 @@ const App = () => {
         onLibrary={() => setShowPicker(true)}
         onShowSheet={() => { setShowHome(false); setMobileSheet(true); }}
       />
-      <MobilePanelSheet open={mobileSheet && !showHome}
+      {mishnah && <MobilePanelSheet open={mobileSheet && !showHome}
         onClose={() => setMobileSheet(false)}
-        mishnah={mishnah} perek={perek} highlights={highlights} />
+        mishnah={mishnah} perek={perek} highlights={highlights} />}
     </div>
   );
 };

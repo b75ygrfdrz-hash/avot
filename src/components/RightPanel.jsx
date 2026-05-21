@@ -12,7 +12,7 @@ const useState_mc = useState, useRef_mc = useRef, useEffect_mc = useEffect;
 const useEffect_h = useEffect, useState_ms = useState, useEffect_ms = useEffect;
 const useS_o = useState, useE_o = useEffect;
 
-// Right panel: Commentary, Videos, Notes, Chevruta, Cross-refs
+// Right panel: Commentary, Sources, Shiurim, Notes
 
 
 const RightPanel = ({ mishnah, perek, highlights, onJumpToHighlight }) => {
@@ -200,83 +200,6 @@ function hlPale(c) {
   return ({yellow: '#fef5d0', rose: '#fbe0e3', sky: '#dce8f0', mint: '#dcecda'})[c] || '#f0f0f0';
 }
 
-// ============================================================
-// Chevruta AI
-// ============================================================
-const ChevrutaPanel = ({ mishnah }) => {
-  const [messages, setMessages] = useState_p([
-    { role: 'ai', text: `Let's learn this Mishnah together. I'm grounded in classical commentators — ask me anything about Pirkei Avot ${mishnah.num === undefined ? '' : `${mishnah.num}`} or this teaching specifically.` },
-  ]);
-  const [input, setInput] = useState_p('');
-  const [loading, setLoading] = useState_p(false);
-
-  const prompts = [
-    "Explain this Mishnah in one sentence",
-    "What would Rashi and Rambam disagree on here?",
-    "How does this apply to my daily life?",
-    "What's the deeper meaning of the Hebrew word choice?",
-  ];
-
-  const send = async (text) => {
-    if (!text.trim()) return;
-    setMessages(m => [...m, { role: 'user', text }]);
-    setInput('');
-    setLoading(true);
-    try {
-      const prompt = `You are a Torah scholar teaching Pirkei Avot. The current Mishnah is:
-
-Hebrew: "${mishnah.hebrew}"
-English: "${mishnah.english}"
-Attributed to: ${mishnah.attribution.en}
-
-The student asks: "${text}"
-
-Answer briefly (3-5 sentences), warmly, and where possible cite a classical commentator (Rashi, Rambam, Bartenura, Maharal) or modern voice. Use simple English. Do not pretend you have access to the user's notes.`;
-      const reply = await window.claude.complete(prompt);
-      setMessages(m => [...m, { role: 'ai', text: reply }]);
-    } catch (e) {
-      setMessages(m => [...m, { role: 'ai', text: "I couldn't reach the chevruta service just now — please try again in a moment." }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <div className="chev-intro">
-        <div className="label">AI Chevruta · Beta</div>
-        <div className="ttl">Learn alongside an AI study partner</div>
-        <div className="desc">Trained on classical commentary. Always verify with your rav or a primary source.</div>
-      </div>
-      <div className="chev-messages">
-        {messages.map((m, i) => (
-          <div key={i} className={`chev-msg ${m.role}`}>
-            {m.text}
-            {m.role === 'ai' && i > 0 && <div className="source">↗ Grounded in classical commentary</div>}
-          </div>
-        ))}
-        {loading && <div className="chev-msg ai" style={{opacity: 0.7}}>thinking…</div>}
-      </div>
-      {messages.length <= 1 && (
-        <div className="chev-prompts">
-          {prompts.map(p => (
-            <button key={p} className="chev-prompt" onClick={() => send(p)}>{p}</button>
-          ))}
-        </div>
-      )}
-      <div className="chev-input-wrap">
-        <input className="chev-input"
-          placeholder="Ask anything about this Mishnah…"
-          value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && send(input)} />
-        <button className="chev-send" disabled={!input.trim() || loading} onClick={() => send(input)}>
-          <Icon name="arrow_right" size={14} />
-        </button>
-      </div>
-    </div>
-  );
-};
-
 Object.assign(window, { RightPanel });
 
-export { ChevrutaPanel, CommentaryPanel, CrossRefsPanel, NotesPanel, RightPanel, VideosPanel, highlightColor, hlPale };
+export { CommentaryPanel, CrossRefsPanel, NotesPanel, RightPanel, VideosPanel, highlightColor, hlPale };

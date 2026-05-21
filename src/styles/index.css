@@ -836,100 +836,6 @@ input, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--border);
 }
 
-/* Chevruta AI */
-.chev-intro {
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-deep) 100%);
-  border: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-.chev-intro .label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--wine);
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.chev-intro .ttl {
-  font-family: var(--serif);
-  font-size: 18px;
-  color: var(--ink);
-  margin-bottom: 6px;
-}
-.chev-intro .desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
-
-.chev-messages { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
-.chev-msg {
-  padding: 11px 14px;
-  border-radius: 12px;
-  font-size: 13.5px;
-  line-height: 1.55;
-  max-width: 90%;
-}
-.chev-msg.user {
-  background: var(--ink);
-  color: var(--paper);
-  align-self: flex-end;
-  border-bottom-right-radius: 4px;
-}
-.chev-msg.ai {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--ink-soft);
-  font-family: var(--serif);
-  border-bottom-left-radius: 4px;
-}
-.chev-msg.ai .source {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border-soft);
-  font-family: var(--sans);
-}
-.chev-prompts { display: flex; flex-direction: column; gap: 6px; }
-.chev-prompt {
-  text-align: left;
-  padding: 9px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  transition: all 0.15s;
-}
-.chev-prompt:hover { background: var(--paper-hover); border-color: var(--wine-soft); }
-.chev-prompt::before { content: "→"; margin-right: 8px; color: var(--wine); }
-
-.chev-input-wrap {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-.chev-input {
-  flex: 1;
-  border: 0;
-  background: transparent;
-  outline: none;
-  font-size: 13.5px;
-  padding: 6px;
-  font-family: var(--serif);
-}
-.chev-send {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--paper);
-  display: flex; align-items: center; justify-content: center;
-}
-.chev-send:disabled { opacity: 0.4; cursor: not-allowed; }
-
 /* ============================================
    Floating selection toolbar
    ============================================ */
@@ -3584,25 +3490,15 @@ html.dark .video-card,
 html.dark .cross-ref,
 html.dark .note-card,
 html.dark .empty-state,
-html.dark .add-source,
-html.dark .chev-intro,
-html.dark .chev-msg.ai,
-html.dark .chev-input-wrap,
-html.dark .chev-prompt {
+html.dark .add-source {
   background: var(--night-3);
   border-color: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.85);
 }
-html.dark .video-card:hover,
-html.dark .chev-prompt:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.18); }
+html.dark .video-card:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.18); }
 html.dark .video-meta .title { color: rgba(255, 255, 255, 0.92); }
 html.dark .video-meta .teacher,
 html.dark .video-meta .source { color: rgba(255, 255, 255, 0.5); }
-html.dark .chev-msg.user { background: var(--accent); color: var(--night); }
-html.dark .chev-msg.ai .source { border-top-color: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.4); }
-html.dark .chev-input { color: rgba(255, 255, 255, 0.9); }
-html.dark .chev-input::placeholder { color: rgba(255, 255, 255, 0.35); }
-html.dark .chev-send { background: var(--accent); color: var(--night); }
 html.dark .vf { background: transparent; border-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
 html.dark .vf.active { background: var(--accent); color: var(--night); border-color: var(--accent); }
 html.dark .cross-tag { background: var(--accent); color: var(--night); }
@@ -3618,8 +3514,6 @@ html.dark .notes-btn:hover { background: rgba(255, 255, 255, 0.05); }
 html.dark .note-card .hl-snippet { color: rgba(255, 255, 255, 0.5); border-left-color: rgba(255, 255, 255, 0.1); }
 html.dark .note-card .body { color: rgba(255, 255, 255, 0.9); }
 html.dark .note-card .tag { background: transparent; border-color: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.55); }
-html.dark .chev-intro .ttl { color: rgba(255, 255, 255, 0.95); }
-html.dark .chev-intro .desc { color: rgba(255, 255, 255, 0.55); }
 html.dark .add-source { border-style: dashed; color: rgba(255, 255, 255, 0.5); }
 html.dark .add-source:hover { color: var(--accent-text); border-color: var(--accent); background: rgba(184, 136, 42, 0.05); }
 
@@ -5260,13 +5154,6 @@ html .home-cta-primary:hover {
 }
 .mc-pop-link:hover { background: #ffce0a !important; color: #0F0D0A !important; }
 
-.chev-send {
-  background: #0F0D0A !important;
-  color: #FDFAF4 !important;
-}
-
-.chev-msg.user { background: #0F0D0A !important; color: #FDFAF4 !important; }
-
 .kids-btn:not(.secondary) {
   background: #d97a4a !important;
   color: #fff !important;
@@ -6658,6 +6545,81 @@ html.dark .rabbi-info-btn.open {
 }
 html.dark .layout-segmented {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* Empty-chapter state — shown when a perek has no mishnayot loaded */
+.empty-chapter {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+}
+.empty-chapter-inner { max-width: 420px; }
+.empty-chapter-eyebrow {
+  font-family: var(--hebrew);
+  font-size: 32px;
+  color: var(--muted-soft);
+  margin-bottom: 16px;
+}
+.empty-chapter-title {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.empty-chapter-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.empty-chapter-btn {
+  padding: 10px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity .15s ease;
+}
+.empty-chapter-btn:hover { opacity: 0.85; }
+html.dark .empty-chapter-title { color: rgba(255, 255, 255, 0.9); }
+html.dark .empty-chapter-btn { background: var(--gold); color: var(--night); }
+
+/* Error boundary fallback */
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: var(--bg);
+  text-align: center;
+}
+.error-boundary-inner { max-width: 420px; }
+.error-boundary h1 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.error-boundary p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.error-boundary button {
+  padding: 10px 24px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Smooth one-shot color transition when toggling dark mode */

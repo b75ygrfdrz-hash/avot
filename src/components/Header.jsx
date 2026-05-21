@@ -34,7 +34,7 @@ const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMe
           <button className="perek-picker" data-tip="Jump to a perek or mishnah" data-tip-pos="bottom" onClick={onPicker}>
             <span className="he" style={{fontFamily: 'var(--hebrew)', fontWeight: 500}}>פרק {perek.title.he.replace('פרק ', '')}</span>
             <span style={{color: 'var(--muted-soft)'}}>·</span>
-            <span>Mishnah {mishnah.num}</span>
+            <span>Mishnah {mishnah ? mishnah.num : '—'}</span>
             <Icon name="chevronD" size={12} />
           </button>
         </div>

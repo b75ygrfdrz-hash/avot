@@ -77,24 +77,32 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
     });
   };
 
-  const hasNext = mishnahIdx < perek.mishnayot.length - 1 || perekIdx < perakim.length - 1;
-  const hasPrev = mishnahIdx > 0 || perekIdx > 0;
+  // Find the nearest perek in a direction that actually has mishnayot
+  const nextPerek = () => {
+    for (let p = perekIdx + 1; p < perakim.length; p++) if (perakim[p].mishnayot.length) return p;
+    return -1;
+  };
+  const prevPerek = () => {
+    for (let p = perekIdx - 1; p >= 0; p--) if (perakim[p].mishnayot.length) return p;
+    return -1;
+  };
+  const hasNext = mishnahIdx < perek.mishnayot.length - 1 || nextPerek() >= 0;
+  const hasPrev = mishnahIdx > 0 || prevPerek() >= 0;
 
   const goNext = () => {
     if (mishnahIdx < perek.mishnayot.length - 1) {
       setMishnahIdx(mishnahIdx + 1);
-    } else if (perekIdx < perakim.length - 1) {
-      setPerekIdx(perekIdx + 1);
-      setMishnahIdx(0);
+    } else {
+      const p = nextPerek();
+      if (p >= 0) { setPerekIdx(p); setMishnahIdx(0); }
     }
   };
   const goPrev = () => {
     if (mishnahIdx > 0) {
       setMishnahIdx(mishnahIdx - 1);
-    } else if (perekIdx > 0) {
-      setPerekIdx(perekIdx - 1);
-      const prev = perakim[perekIdx - 1];
-      setMishnahIdx(Math.max(0, prev.mishnayot.length - 1));
+    } else {
+      const p = prevPerek();
+      if (p >= 0) { setPerekIdx(p); setMishnahIdx(Math.max(0, perakim[p].mishnayot.length - 1)); }
     }
   };
 
