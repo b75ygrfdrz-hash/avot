@@ -214,11 +214,14 @@ const App = () => {
       const text = sel.toString();
       const range = sel.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      // compute start/end offsets within the english text
+      // Offset of the selection start within the container's text,
+      // measured against rendered characters (including any inside
+      // existing highlight marks) so it maps onto the raw mishnah text.
       const container = ev.currentTarget;
-      const fullText = container.innerText;
-      const start = fullText.indexOf(text);
-      if (start === -1) { return; }
+      const pre = range.cloneRange();
+      pre.selectNodeContents(container);
+      pre.setEnd(range.startContainer, range.startOffset);
+      const start = pre.toString().length;
       setSelData({ text, lang, start, end: start + text.length });
       setSelPos({ x: rect.left + rect.width / 2 - 110, y: rect.top - 50 });
     }, 10);
