@@ -7,6 +7,7 @@ import { Reader } from './components/Reader.jsx';
 import { RightPanel } from './components/RightPanel.jsx';
 import { SearchOverlay } from './components/SearchOverlay.jsx';
 import { AdminPanel } from './components/admin.jsx';
+import { MesorahTree } from './components/MesorahTree.jsx';
 import { KidsMode } from './components/kids.jsx';
 import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
@@ -84,6 +85,7 @@ const App = () => {
   const [showParentDash, setShowParentDash] = useS(false);
   const [showColoring, setShowColoring] = useS(false);
   const [showAdmin, setShowAdmin] = useS(false);
+  const [showMesorah, setShowMesorah] = useS(false);
   const [showSearch, setShowSearch] = useS(false);
   const [railCollapsed, setRailCollapsed] = useS(localStorage.getItem('avot.railCollapsed.v1') === 'true');
   const [showPicker, setShowPicker] = useS(false);
@@ -346,6 +348,8 @@ const App = () => {
           setShowSearch(false);
         }} />}
         {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
+        {showMesorah && <MesorahTree onClose={() => setShowMesorah(false)}
+          onJump={(p, m) => { setShowMesorah(false); jumpTo(p, m); }} />}
       </div>
     );
   }
@@ -374,6 +378,7 @@ const App = () => {
               lastRead={lastReadCard} onResume={() => {}}
               onAdmin={() => setShowAdmin(true)} />
             <Home data={data}
+              onOpenMesorah={() => setShowMesorah(true)}
               lastRead={mishnah && (perekIdx > 0 || mishnahIdx > 0) ? {
                 perek: perek.num,
                 mishnah: mishnah.num,
@@ -434,6 +439,8 @@ const App = () => {
         setShowSearch(false);
       }} />}
       {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
+      {showMesorah && <MesorahTree onClose={() => setShowMesorah(false)}
+        onJump={(p, m) => { setShowMesorah(false); jumpTo(p, m); }} />}
       {showPicker && (
         <PerekPicker data={data} perek={perek} mishnah={mishnah}
           onClose={() => setShowPicker(false)}

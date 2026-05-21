@@ -15,7 +15,7 @@ const useS_o = useState, useE_o = useEffect;
 // Today's mishnah hero · Continue reading · Stats · Perek shelf · Curated highlight
 
 
-const Home = ({ data, lastRead, onJump, stats }) => {
+const Home = ({ data, lastRead, onJump, stats, onOpenMesorah }) => {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   // Pick today's mishnah deterministically by day-of-year
   const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
@@ -73,6 +73,28 @@ const Home = ({ data, lastRead, onJump, stats }) => {
               </div>
             </aside>
           </div>
+        </section>
+
+        <section className="home-mesorah stagger-5">
+          <button className="home-mesorah-card" onClick={onOpenMesorah}>
+            <div className="home-mesorah-main">
+              <div className="home-mesorah-eyebrow">Explore</div>
+              <div className="home-mesorah-title">The Chain of Mesorah</div>
+              <div className="home-mesorah-desc">
+                Trace the tradition from Moshe at Sinai, through the Zugot, down to
+                the sages who gave us the Mishnah.
+              </div>
+              <span className="home-mesorah-cta">
+                Open the chain
+                <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="10" x2="16" y2="10" /><polyline points="12 6 16 10 12 14" />
+                </svg>
+              </span>
+            </div>
+            <div className="home-mesorah-chain" aria-hidden="true">
+              {[0, 1, 2, 3, 4, 5].map(i => <span key={i} className="home-mesorah-dot" />)}
+            </div>
+          </button>
         </section>
 
         {lastRead && (

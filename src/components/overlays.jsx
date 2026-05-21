@@ -72,19 +72,35 @@ const QuoteCard = ({ mishnah, perek, onClose }) => {
 // Memorize mode (spaced repetition flashcards)
 // ============================================================
 const MemorizeMode = ({ perek, onClose }) => {
-  const [idx, setIdx] = useState_m(0);
+  const [cards] = useState_m(() => perek.mishnayot.filter(m => !m.stub));
+  const [queue, setQueue] = useState_m(() => cards.map((_, i) => i));
+  const [learned, setLearned] = useState_m(() => new Set());
   const [revealed, setRevealed] = useState_m(false);
-  const cards = perek.mishnayot.filter(m => !m.stub);
-  const card = cards[idx];
 
-  const judge = (level) => {
-    // SRS levels: again / hard / good / easy
+  const total = cards.length;
+  const card = queue.length ? cards[queue[0]] : null;
+  const finished = total > 0 && queue.length === 0;
+
+  const restart = () => {
+    setQueue(cards.map((_, i) => i));
+    setLearned(new Set());
     setRevealed(false);
-    setIdx(i => Math.min(cards.length - 1, i + 1));
   };
 
-  if (!card) return null;
-  const done = idx >= cards.length - 1 && revealed === false && idx === cards.length - 1;
+  // Within-session scheduling: again brings the card back soon, hard
+  // pushes it to the end, good/easy retire it as learned.
+  const judge = (level) => {
+    const [cur, ...rest] = queue;
+    if (level === 'good' || level === 'easy') {
+      setLearned(prev => new Set(prev).add(cur));
+      setQueue(rest);
+    } else if (level === 'again') {
+      setQueue([...rest.slice(0, 2), cur, ...rest.slice(2)]);
+    } else {
+      setQueue([...rest, cur]);
+    }
+    setRevealed(false);
+  };
 
   return (
     <div className="modal-back" onClick={onClose}>
@@ -92,32 +108,57 @@ const MemorizeMode = ({ perek, onClose }) => {
         <div className="memorize-head">
           <div>
             <div className="memorize-eyebrow">Memorize · Spaced Repetition</div>
-            <div className="memorize-title">Perek {perek.num} · {idx + 1} of {cards.length}</div>
+            <div className="memorize-title">Perek {perek.num}</div>
           </div>
           <button className="icon-btn" onClick={onClose} style={{color:'var(--ink)'}}><Icon name="close" /></button>
         </div>
-        <div className="memorize-progress">
-          <div className="memorize-progress-bar" style={{width: `${((idx + 1) / cards.length) * 100}%`}} />
-        </div>
-        <div className="memorize-card" onClick={() => setRevealed(true)}>
-          <div className="memorize-num">{perek.num}:{card.num}</div>
-          <div className="memorize-prompt">Recite the Mishnah of {card.attribution.en}…</div>
-          {revealed ? (
-            <>
-              <div className="memorize-he">{card.hebrew}</div>
-              <div className="memorize-en">{card.english}</div>
-            </>
-          ) : (
-            <div className="memorize-cta">Try to recall, then tap to reveal</div>
-          )}
-        </div>
-        {revealed && (
-          <div className="memorize-judge">
-            <button className="judge again" onClick={() => judge('again')}>Again<span>&lt; 1m</span></button>
-            <button className="judge hard" onClick={() => judge('hard')}>Hard<span>10m</span></button>
-            <button className="judge good" onClick={() => judge('good')}>Good<span>1d</span></button>
-            <button className="judge easy" onClick={() => judge('easy')}>Easy<span>4d</span></button>
+
+        {total === 0 ? (
+          <div className="memorize-empty">
+            <Icon name="cards" size={28} />
+            <div className="memorize-empty-title">Nothing to memorize yet</div>
+            <div className="memorize-empty-sub">This chapter has no mishnayot loaded.</div>
+            <button className="memorize-done-btn" onClick={onClose}>Close</button>
           </div>
+        ) : finished ? (
+          <div className="memorize-complete">
+            <div className="memorize-complete-mark"><Icon name="check" size={26} /></div>
+            <div className="memorize-complete-title">Perek {perek.num} complete</div>
+            <div className="memorize-complete-sub">
+              You reviewed all {total} {total === 1 ? 'mishnah' : 'mishnayot'} in this chapter.
+            </div>
+            <div className="memorize-complete-actions">
+              <button className="memorize-restart-btn" onClick={restart}>Review again</button>
+              <button className="memorize-done-btn" onClick={onClose}>Done</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="memorize-progress">
+              <div className="memorize-progress-bar" style={{width: `${(learned.size / total) * 100}%`}} />
+            </div>
+            <div className="memorize-meta">{learned.size} of {total} learned · {queue.length} to go</div>
+            <div className="memorize-card" onClick={() => setRevealed(true)}>
+              <div className="memorize-num">{perek.num}:{card.num}</div>
+              <div className="memorize-prompt">Recite the Mishnah of {card.attribution.en}…</div>
+              {revealed ? (
+                <>
+                  <div className="memorize-he">{card.hebrew}</div>
+                  <div className="memorize-en">{card.english}</div>
+                </>
+              ) : (
+                <div className="memorize-cta">Try to recall, then tap to reveal</div>
+              )}
+            </div>
+            {revealed && (
+              <div className="memorize-judge">
+                <button className="judge again" onClick={() => judge('again')}>Again<span>soon</span></button>
+                <button className="judge hard" onClick={() => judge('hard')}>Hard<span>later</span></button>
+                <button className="judge good" onClick={() => judge('good')}>Good<span>got it</span></button>
+                <button className="judge easy" onClick={() => judge('easy')}>Easy<span>locked in</span></button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
