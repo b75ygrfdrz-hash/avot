@@ -12,7 +12,7 @@
     if (!h) return null;
     const [primary, queryStr] = h.split('?');
     const parts = primary.split('/').filter(Boolean);
-    const route = { kind: null, perek: null, mishnah: null, view: null, query: {} };
+    const route = { kind: null, perek: null, mishnah: null, view: null, focus: null, query: {} };
     if (queryStr) {
       queryStr.split('&').forEach(kv => {
         const [k, v] = kv.split('=');
@@ -22,6 +22,9 @@
     if (parts[0] === 'avot') {
       if (parts[1] === 'home') {
         route.kind = 'home';
+      } else if (parts[1] === 'chain') {
+        route.kind = 'chain';
+        route.focus = parts[2] || null;
       } else if (parts[1]) {
         const m = parts[1].match(/^(\d+)\.(\d+)$/);
         if (m) {

@@ -12,7 +12,7 @@ const useState_mc = useState, useRef_mc = useRef, useEffect_mc = useEffect;
 const useEffect_h = useEffect, useState_ms = useState, useEffect_ms = useEffect;
 const useS_o = useState, useE_o = useEffect;
 
-const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekIdx, perakim, onSelection, highlights, onHighlightClick, layout, setLayout, showWordHover, setShowWordHover, onShareQuote, onSourceSheet, dropcap }) => {
+const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekIdx, perakim, onSelection, highlights, onHighlightClick, layout, setLayout, showWordHover, setShowWordHover, onShareQuote, onSourceSheet, dropcap, onViewInChain }) => {
   const textRef = useRef(null);
 
   // Rabbi info — popover anchored to a button beside the attribution name
@@ -140,7 +140,8 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
             node={rabbiNode}
             anchor={rabbiBtnRef.current}
             onClose={() => setRabbiOpen(false)}
-            onNavigate={navigateToRef} />
+            onNavigate={navigateToRef}
+            onViewInChain={onViewInChain} />
         )}
 
         <div className="text-toolbar">

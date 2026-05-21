@@ -86,6 +86,8 @@ const App = () => {
   const [showColoring, setShowColoring] = useS(false);
   const [showAdmin, setShowAdmin] = useS(false);
   const [showMesorah, setShowMesorah] = useS(false);
+  const [mesorahFocus, setMesorahFocus] = useS(null);
+  const cameFromInApp = useR(false);
   const [showSearch, setShowSearch] = useS(false);
   const [railCollapsed, setRailCollapsed] = useS(localStorage.getItem('avot.railCollapsed.v1') === 'true');
   const [showPicker, setShowPicker] = useS(false);
@@ -129,6 +131,9 @@ const App = () => {
         setShowHome(false);
         if (route.view) setLayout(route.view);
       }
+    } else if (route.kind === 'chain') {
+      setShowMesorah(true);
+      setMesorahFocus(route.focus || null);
     } else if (route.kind === 'home') {
       setShowHome(true);
     }
@@ -137,15 +142,22 @@ const App = () => {
   // Sync URL hash whenever position or view changes
   useE(() => {
     if (!window.AvotRoutes) return;
+    if (showMesorah) return;
     if (showHome) AvotRoutes.home();
     else if (mishnah) AvotRoutes.update(perek.num, mishnah.num, { view: layout });
-  }, [showHome, perekIdx, mishnahIdx, layout]);
+  }, [showHome, perekIdx, mishnahIdx, layout, showMesorah]);
 
   // React to manual hash changes (back/forward, paste)
   useE(() => {
     const onHash = () => {
       const route = window.AvotRoutes?.parseHash?.();
-      if (!route) return;
+      if (!route) { setShowMesorah(false); return; }
+      if (route.kind === 'chain') {
+        setMesorahFocus(route.focus || null);
+        setShowMesorah(true);
+        return;
+      }
+      setShowMesorah(false);
       if (route.kind === 'mishnah') {
         const pi = data.perakim.findIndex(p => p.num === route.perek);
         if (pi >= 0) {
@@ -318,6 +330,20 @@ const App = () => {
     else navigate();
   };
 
+  // The Mesorah section is a routed view; open/close drives the URL hash
+  const openMesorah = (focusId) => {
+    cameFromInApp.current = true;
+    location.hash = '#avot/chain' + (focusId ? '/' + focusId : '');
+  };
+  const closeMesorah = () => {
+    if (cameFromInApp.current) {
+      cameFromInApp.current = false;
+      window.history.back();
+    } else {
+      location.hash = '#avot/home';
+    }
+  };
+
   // Render
   if (!onboarded) {
     return <Onboarding setMode={setMode} onDone={() => setOnboarded(true)} />;
@@ -348,8 +374,9 @@ const App = () => {
           setShowSearch(false);
         }} />}
         {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
-        {showMesorah && <MesorahTree onClose={() => setShowMesorah(false)}
-          onJump={(p, m) => { setShowMesorah(false); jumpTo(p, m); }} />}
+        {showMesorah && <MesorahTree onClose={closeMesorah}
+          onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
+          focusId={mesorahFocus} />}
       </div>
     );
   }
@@ -378,7 +405,7 @@ const App = () => {
               lastRead={lastReadCard} onResume={() => {}}
               onAdmin={() => setShowAdmin(true)} />
             <Home data={data}
-              onOpenMesorah={() => setShowMesorah(true)}
+              onOpenMesorah={() => openMesorah()}
               lastRead={mishnah && (perekIdx > 0 || mishnahIdx > 0) ? {
                 perek: perek.num,
                 mishnah: mishnah.num,
@@ -413,6 +440,7 @@ const App = () => {
               onShareQuote={() => setShowQuote(true)}
               onSourceSheet={() => setShowSheet(true)}
               dropcap={dropcap}
+              onViewInChain={(id) => openMesorah(id)}
             />
             <RightPanel mishnah={mishnah} perek={perek} highlights={highlights} />
           </>
@@ -439,8 +467,9 @@ const App = () => {
         setShowSearch(false);
       }} />}
       {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
-      {showMesorah && <MesorahTree onClose={() => setShowMesorah(false)}
-        onJump={(p, m) => { setShowMesorah(false); jumpTo(p, m); }} />}
+      {showMesorah && <MesorahTree onClose={closeMesorah}
+        onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
+        focusId={mesorahFocus} />}
       {showPicker && (
         <PerekPicker data={data} perek={perek} mishnah={mishnah}
           onClose={() => setShowPicker(false)}
