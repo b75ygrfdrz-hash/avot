@@ -7781,25 +7781,25 @@ html.theme-transition *::after {
 }
 .kp-line {
   flex-shrink: 0;
-  width: 28px;
-  height: 3px;
+  width: 16px;
+  height: 2px;
   background: #d6dde6;
   border-radius: 2px;
-  margin: 0 6px;
+  margin: 0 3px;
   transition: background 0.3s ease;
 }
 .kp-line.done { background: var(--c); }
 .kp-stop {
   position: relative;
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 2.5px solid #d6dde6;
+  border: 2px solid #d6dde6;
   background: #fff;
   color: #6b7280;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7817,14 +7817,14 @@ html.theme-transition *::after {
   background: white;
   border-color: var(--c);
   color: var(--c);
-  width: 44px;
-  height: 44px;
-  font-size: 15px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .kp-pulse {
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 50%;
   border: 2px solid var(--c);
   pointer-events: none;
