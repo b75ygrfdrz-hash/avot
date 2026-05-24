@@ -90,9 +90,25 @@ const Confetti = ({ active }) => {
 const AdventurePath = ({ mishnayot, currentIdx, onJump }) => {
   const trackRef = useRef(null);
   useEffect(() => {
-    const el = trackRef.current?.querySelector('.kp-stop.current');
-    if (el && el.scrollIntoView) {
-      el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const track = trackRef.current;
+    if (!track) return;
+    const el = track.querySelector('.kp-stop.current');
+    if (!el) return;
+    // Only scroll the track itself — avoid scrollIntoView, which can
+    // bubble up and scroll ancestors (even those with overflow: hidden,
+    // which would shift the whole page).
+    const currentCenter = el.offsetLeft + el.offsetWidth / 2;
+    const target = Math.max(0, currentCenter - track.clientWidth / 2);
+    if (typeof track.scrollTo === 'function') {
+      track.scrollTo({ left: target, behavior: 'smooth' });
+    } else {
+      track.scrollLeft = target;
+    }
+    // Defensive: ensure ancestors didn't get scrolled by a prior render.
+    let cur = track.parentElement;
+    while (cur && cur !== document.body) {
+      if (cur.scrollLeft) cur.scrollLeft = 0;
+      cur = cur.parentElement;
     }
   }, [currentIdx]);
 
