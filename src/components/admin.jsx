@@ -878,4 +878,4 @@ const SimpleAdmin = ({ title, subtitle, action, children }) => (
 
 Object.assign(window, { AdminPanel });
 
-export { AdminNav, AdminPanel, AuditAdmin, CommentaryAdmin, CommentsAdmin, CrossRefsAdmin, DrawerCommentary, DrawerCrossRefs, DrawerHistory, DrawerKids, DrawerText, DrawerVideos, EditorsAdmin, IllustrationsAdmin, MediaAdmin, MishnahEditDrawer, MishnayotTable, PerakimAdmin, QuizzesAdmin, Select, SettingsAdmin, SimpleAdmin, StoriesAdmin, TranslationsAdmin, UsersAdmin, VideosAdmin, computeCompleteness, statusLabel };
+export { AdminLogin, AdminNav, AdminPanel, AuditAdmin, CommentaryAdmin, CommentsAdmin, CrossRefsAdmin, DrawerCommentary, DrawerCrossRefs, DrawerHistory, DrawerKids, DrawerText, DrawerVideos, EditorsAdmin, IllustrationsAdmin, MediaAdmin, MishnahEditDrawer, MishnayotTable, PerakimAdmin, QuizzesAdmin, Select, SettingsAdmin, SimpleAdmin, StoriesAdmin, TranslationsAdmin, UsersAdmin, VideosAdmin, computeCompleteness, statusLabel };

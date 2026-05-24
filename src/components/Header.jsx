@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home } from './Home.jsx';
 import { Icon } from './Icon.jsx';
+import { AccountMenu } from './AccountMenu.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -18,7 +19,7 @@ const useS_o = useState, useE_o = useEffect;
 // ============================================================
 // Header
 // ============================================================
-const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMemorize, dark, setDark, onAdmin, onHome, atHome, onTour, onPicker, onShabbat }) => {
+const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMemorize, dark, setDark, onAdmin, onHome, atHome, onTour, onPicker, onShabbat, onOpenAuth }) => {
   return (
     <header className="header">
       <div className="header-left">
@@ -72,7 +73,7 @@ const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMe
           <button className={mode === 'adult' ? 'active' : ''} onClick={() => setMode('adult')} data-tip="Full reader with commentary, sources, shiurim" data-tip-pos="bottom">Adult</button>
           <button className={mode === 'kids' ? 'active' : ''} onClick={() => setMode('kids')} data-tip="Illustrated, story-based learning for ages 5–10" data-tip-pos="bottom">Kids</button>
         </div>
-        <div className="avatar" data-tip="Your profile" data-tip-pos="left">DG</div>
+        <AccountMenu onOpenAuth={onOpenAuth} />
       </div>
     </header>
   );

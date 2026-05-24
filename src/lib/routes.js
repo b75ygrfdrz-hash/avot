@@ -29,6 +29,8 @@
         route.focus = parts[2] || null;
       } else if (parts[1] === 'shabbat') {
         route.kind = 'shabbat';
+      } else if (parts[1] === 'list') {
+        route.kind = 'list';
       } else if (parts[1]) {
         const m = parts[1].match(/^(\d+)\.(\d+)$/);
         if (m) {

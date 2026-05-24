@@ -9,6 +9,8 @@ import { SearchOverlay } from './components/SearchOverlay.jsx';
 import { AdminPanel } from './components/admin.jsx';
 import { MesorahTree } from './components/MesorahTree.jsx';
 import { ShabbatTable } from './components/ShabbatTable.jsx';
+import { IdeasList } from './components/IdeasList.jsx';
+import { AuthModal } from './components/AuthModal.jsx';
 import { KidsMode } from './components/kids.jsx';
 import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
@@ -89,6 +91,8 @@ const App = () => {
   const [showMesorah, setShowMesorah] = useS(false);
   const [mesorahFocus, setMesorahFocus] = useS(null);
   const [showShabbat, setShowShabbat] = useS(false);
+  const [showList, setShowList] = useS(false);
+  const [showAuth, setShowAuth] = useS(false);
   const cameFromInApp = useR(false);
   // The hash-sync effect must skip its first run: on a deep-link load it
   // would otherwise overwrite the incoming hash before the initial-route
@@ -142,6 +146,8 @@ const App = () => {
       setMesorahFocus(route.focus || null);
     } else if (route.kind === 'shabbat') {
       setShowShabbat(true);
+    } else if (route.kind === 'list') {
+      setShowList(true);
     } else if (route.kind === 'home') {
       setShowHome(true);
     }
@@ -169,11 +175,19 @@ const App = () => {
       }
       if (route.kind === 'shabbat') {
         setShowMesorah(false);
+        setShowList(false);
         setShowShabbat(true);
+        return;
+      }
+      if (route.kind === 'list') {
+        setShowMesorah(false);
+        setShowShabbat(false);
+        setShowList(true);
         return;
       }
       setShowMesorah(false);
       setShowShabbat(false);
+      setShowList(false);
       if (route.kind === 'mishnah') {
         const pi = data.perakim.findIndex(p => p.num === route.perek);
         if (pi >= 0) {
@@ -374,6 +388,11 @@ const App = () => {
     }
   };
 
+  const closeList = () => {
+    setShowList(false);
+    location.hash = '#avot/home';
+  };
+
   // Render
   if (!onboarded) {
     return <Onboarding setMode={setMode} onDone={() => setOnboarded(true)} />;
@@ -392,6 +411,7 @@ const App = () => {
           onAdmin={() => setShowAdmin(true)}
           onShabbat={openShabbat}
           onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
+          onOpenAuth={() => setShowAuth(true)}
           dark={dark} setDark={setDark} />
         {chapterEmpty ? (
           <EmptyChapter perek={perek} onGoToStart={() => jumpTo(1, 1)} />
@@ -421,6 +441,8 @@ const App = () => {
           focusId={mesorahFocus} />}
         {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
           onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
+        {showList && <IdeasList onClose={closeList} />}
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       </div>
     );
   }
@@ -440,6 +462,7 @@ const App = () => {
         onShabbat={openShabbat}
         atHome={showHome}
         onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
+        onOpenAuth={() => setShowAuth(true)}
         dark={dark} setDark={setDark} />
       {showHome ? (
         <>
@@ -518,6 +541,8 @@ const App = () => {
         focusId={mesorahFocus} />}
       {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
         onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
+      {showList && <IdeasList onClose={closeList} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showPicker && (
         <PerekPicker data={data} perek={perek} mishnah={mishnah}
           onClose={() => setShowPicker(false)}

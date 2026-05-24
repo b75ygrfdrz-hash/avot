@@ -79,6 +79,17 @@ Pirkei Avot has 6 chapters and ~70 mishnayot. To fill them:
   functions alongside components). Cosmetic, a full reload always works.
 - `npm install` reports 2 moderate advisories in Vite's dev-only deps.
 - The Admin/CMS panel is a visual mock with no persistence.
+- Auth phase 1 ships the UI + Supabase client wiring but is dormant
+  until the user creates a Supabase project and sets
+  `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (in `.env.local` for
+  dev, in Netlify env vars for production). The schema lives at
+  `supabase/schema.sql` (run it in the Supabase SQL editor). Until
+  configured, the AccountMenu hides itself and AuthModal shows a
+  "not configured" message.
+- Phase 2 (next): sync highlights/bookmarks/kids progress from
+  localStorage to Supabase on login, "upload local data" prompt on
+  first login, replace the hardcoded admin password with a
+  `profiles.role` check.
 - Minor dead code and accessibility gaps remain.
 
 ## Git
