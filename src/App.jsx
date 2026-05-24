@@ -383,7 +383,12 @@ const App = () => {
     return (
       <div className="app">
         <Header mode={mode} setMode={setMode} perek={perek} mishnah={mishnah}
-          onMenuClick={() => {}} onSearchOpen={() => setShowSearch(true)} onMemorize={() => setShowMemorize(true)}
+          onMenuClick={() => {
+            const next = !railCollapsed;
+            setRailCollapsed(next);
+            localStorage.setItem('avot.railCollapsed.v1', String(next));
+          }}
+          onSearchOpen={() => setShowSearch(true)} onMemorize={() => setShowMemorize(true)}
           onAdmin={() => setShowAdmin(true)}
           onShabbat={openShabbat}
           onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
@@ -391,11 +396,17 @@ const App = () => {
         {chapterEmpty ? (
           <EmptyChapter perek={perek} onGoToStart={() => jumpTo(1, 1)} />
         ) : (
-          <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
-            mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
-            onColoring={() => setShowColoring(true)}
-            onParentDash={() => setShowParentDash(true)}
-          />
+          <div className={`kids-with-rail ${railCollapsed ? 'rail-collapsed' : ''}`}>
+            <LeftRail data={data} perekIdx={perekIdx} mishnahIdx={mishnahIdx}
+              setPerekIdx={setPerekIdx} setMishnahIdx={setMishnahIdx}
+              lastRead={lastReadCard} onResume={() => {}}
+              onAdmin={() => setShowAdmin(true)} />
+            <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
+              mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
+              onColoring={() => setShowColoring(true)}
+              onParentDash={() => setShowParentDash(true)}
+            />
+          </div>
         )}
         {showParentDash && <ParentDashboard onClose={() => setShowParentDash(false)} />}
         {showColoring && <ColoringPage mishnah={mishnah} onClose={() => setShowColoring(false)} />}

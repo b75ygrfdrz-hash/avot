@@ -2122,11 +2122,12 @@ html.dark .sheet-page { background: var(--paper); color: var(--ink); }
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  background: var(--ink);
-  color: var(--paper);
+  background: #1f1428;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   font-family: var(--sans);
   font-size: 11.5px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.01em;
   padding: 6px 10px;
   border-radius: 6px;
@@ -2135,7 +2136,7 @@ html.dark .sheet-page { background: var(--paper); color: var(--ink); }
   pointer-events: none;
   transition: opacity 0.15s, transform 0.15s;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
 }
 [data-tip]::before {
   content: "";
@@ -2147,7 +2148,7 @@ html.dark .sheet-page { background: var(--paper); color: var(--ink); }
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 6px solid var(--ink);
+  border-top: 6px solid #1f1428;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s, transform 0.15s;
@@ -9299,3 +9300,31 @@ html.theme-transition *::after {
 }
 .kra-tip em { font-style: italic; }
 .kra-tip strong { font-weight: 700; display: block; margin-bottom: 3px; }
+
+/* --- Kids with rail (mirrors home-with-rail) --- */
+.kids-with-rail {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  overflow: hidden;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kids-with-rail.rail-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+.kids-with-rail .rail {
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.kids-with-rail.rail-collapsed .rail {
+  opacity: 0;
+  transform: translateX(-20px);
+  pointer-events: none;
+  border-right: 0;
+}
+@media (max-width: 1100px) {
+  .kids-with-rail { grid-template-columns: 220px minmax(0, 1fr); }
+}
+@media (max-width: 768px) {
+  /* Mobile: hide the rail; bottom nav and adventure path cover navigation */
+  .kids-with-rail { grid-template-columns: minmax(0, 1fr) !important; }
+  .kids-with-rail .rail { display: none; }
+}
