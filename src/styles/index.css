@@ -7766,12 +7766,19 @@ html.theme-transition *::after {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 24px;
+  padding: 0 48px;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
 .kp-track::-webkit-scrollbar { display: none; }
+/* Sentinel spacers so the first and last stops always have breathing room */
+.kp-track::before,
+.kp-track::after {
+  content: '';
+  flex-shrink: 0;
+  width: 16px;
+}
 .kp-line {
   flex-shrink: 0;
   width: 28px;

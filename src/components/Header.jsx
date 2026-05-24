@@ -63,9 +63,11 @@ const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMe
             <circle cx="10" cy="14.5" r="0.6" fill="currentColor" />
           </svg>
         </button>
-        <button className="icon-btn" onClick={() => setDark(!dark)} data-tip={dark ? 'Light theme' : 'Dark theme'} data-tip-pos="bottom" aria-label="Toggle theme">
-          <Icon name={dark ? "sun" : "moon"} />
-        </button>
+        {mode !== 'kids' && (
+          <button className="icon-btn" onClick={() => setDark(!dark)} data-tip={dark ? 'Light theme' : 'Dark theme'} data-tip-pos="bottom" aria-label="Toggle theme">
+            <Icon name={dark ? "sun" : "moon"} />
+          </button>
+        )}
         <div className="mode-switch">
           <button className={mode === 'adult' ? 'active' : ''} onClick={() => setMode('adult')} data-tip="Full reader with commentary, sources, shiurim" data-tip-pos="bottom">Adult</button>
           <button className={mode === 'kids' ? 'active' : ''} onClick={() => setMode('kids')} data-tip="Illustrated, story-based learning for ages 5–10" data-tip-pos="bottom">Kids</button>
