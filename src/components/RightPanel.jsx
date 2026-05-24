@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { Select } from './admin.jsx';
+import { getHiddenCommentators, onCommentatorsChange } from '../lib/admin.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -53,9 +54,13 @@ const RightPanel = ({ mishnah, perek, highlights, onJumpToHighlight }) => {
 // Commentary
 // ============================================================
 const CommentaryPanel = ({ mishnah }) => {
-  const available = window.COMMENTATORS.filter(c => mishnah.commentary && mishnah.commentary[c.id]);
+  const [hidden, setHidden] = useState_p(() => getHiddenCommentators());
+  useEffect_p(() => onCommentatorsChange(() => setHidden(getHiddenCommentators())), []);
+  const available = window.COMMENTATORS.filter(c =>
+    mishnah.commentary && mishnah.commentary[c.id] && !hidden.has(c.id)
+  );
   const [active, setActive] = useState_p(available[0]?.id || null);
-  useEffect_p(() => { setActive(available[0]?.id || null); }, [mishnah.num]);
+  useEffect_p(() => { setActive(available[0]?.id || null); }, [mishnah.num, hidden]);
 
   if (available.length === 0) {
     return <div style={{color: 'var(--muted)', fontSize: 13, padding: '20px 0'}}>No commentary added yet for this Mishnah.</div>;

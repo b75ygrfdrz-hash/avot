@@ -1,6 +1,14 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { ILLUSTRATIONS } from './illustrations.jsx';
+import {
+  ADMIN_PASSWORD,
+  isAdminAuthed,
+  setAdminAuthed,
+  getHiddenCommentators,
+  setCommentatorHidden,
+  onCommentatorsChange,
+} from '../lib/admin.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -15,9 +23,113 @@ const useS_o = useState, useE_o = useEffect;
 // Admin / CMS Panel — full-screen content management view
 
 
+// Login gate shown when no admin session exists.
+const AdminLogin = ({ onAuth, onClose }) => {
+  const [pw, setPw] = useState_a('');
+  const [err, setErr] = useState_a('');
+  const submit = (e) => {
+    e.preventDefault();
+    if (pw === ADMIN_PASSWORD) {
+      setAdminAuthed(true);
+      onAuth();
+    } else {
+      setErr('Incorrect password.');
+    }
+  };
+  return (
+    <div className="admin-shell admin-login-shell" data-screen-label="Admin · Sign in">
+      <button className="admin-login-close" onClick={onClose} aria-label="Close">
+        <Icon name="close" />
+      </button>
+      <form className="admin-login-form" onSubmit={submit}>
+        <div className="admin-login-brand">
+          <span style={{fontFamily:'var(--hebrew)', color:'var(--wine)', fontSize: 30}}>אבות</span>
+          <span style={{fontFamily:'var(--serif)', fontWeight: 600, fontSize: 22}}>Avot Admin</span>
+        </div>
+        <p className="admin-login-sub">Sign in to manage content and visibility.</p>
+        <label className="admin-login-label" htmlFor="admin-pw">Password</label>
+        <input
+          id="admin-pw"
+          type="password"
+          value={pw}
+          onChange={e => { setPw(e.target.value); if (err) setErr(''); }}
+          placeholder="Enter password"
+          autoFocus
+        />
+        {err && <div className="admin-login-err">{err}</div>}
+        <button type="submit" className="admin-btn primary admin-login-btn">Sign in</button>
+        <div className="admin-login-hint">
+          (Default password is set in <code>src/lib/admin.js</code>.)
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// A single toggle row for a commentator's visibility.
+const CommToggle = ({ commentator, hidden, onChange }) => (
+  <label className="admin-cv-row">
+    <span className="admin-cv-text">
+      <span className="admin-cv-dot" style={{background: commentator.color}} />
+      <span className="admin-cv-name">{commentator.name}</span>
+      <span className="admin-cv-he" style={{fontFamily:'var(--hebrew)'}}>{commentator.he}</span>
+    </span>
+    <span className={`admin-toggle ${hidden ? '' : 'is-on'}`} role="switch" aria-checked={!hidden}>
+      <input
+        type="checkbox"
+        checked={!hidden}
+        onChange={e => onChange(!e.target.checked)}
+      />
+      <span className="admin-toggle-track"><span className="admin-toggle-thumb" /></span>
+      <span className="admin-toggle-state">{hidden ? 'Hidden' : 'Visible'}</span>
+    </span>
+  </label>
+);
+
+const VisibilityPanel = () => {
+  const [hidden, setHidden] = useState_a(() => getHiddenCommentators());
+  useEffect_a(() => onCommentatorsChange(() => setHidden(getHiddenCommentators())), []);
+  const all = window.COMMENTATORS || [];
+  const toggle = (id, hide) => setCommentatorHidden(id, hide);
+  return (
+    <div className="admin-card admin-visibility">
+      <div className="admin-card-head">
+        <div>
+          <div className="admin-card-eyebrow">Public Visibility</div>
+          <div className="admin-card-title">Commentators in the Reader</div>
+          <div className="admin-card-sub">
+            Turn a commentator off and their tab is hidden from every learner
+            until you turn them back on. Saved on this device.
+          </div>
+        </div>
+      </div>
+      <div className="admin-cv-list">
+        {all.map(c => (
+          <CommToggle
+            key={c.id}
+            commentator={c}
+            hidden={hidden.has(c.id)}
+            onChange={(hide) => toggle(c.id, hide)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const AdminPanel = ({ onClose, data }) => {
-  const [section, setSection] = useState_a('mishnayot');
+  const [authed, setAuthed] = useState_a(isAdminAuthed());
+  const [section, setSection] = useState_a('visibility');
   const [editingMishnah, setEditingMishnah] = useState_a(null);
+
+  if (!authed) {
+    return <AdminLogin onAuth={() => setAuthed(true)} onClose={onClose} />;
+  }
+
+  const signOut = () => {
+    setAdminAuthed(false);
+    setAuthed(false);
+  };
 
   return (
     <div className="admin-shell" data-screen-label="Admin · CMS">
@@ -44,6 +156,9 @@ const AdminPanel = ({ onClose, data }) => {
             <span className="admin-pill">3</span>
           </button>
           <div className="avatar" data-tip="Daniel Goldstein · Owner" data-tip-pos="left">DG</div>
+          <button className="admin-btn ghost" onClick={signOut} data-tip="End the admin session" data-tip-pos="left">
+            Sign out
+          </button>
           <button className="icon-btn" onClick={onClose} data-tip="Exit admin" data-tip-pos="left">
             <Icon name="close" />
           </button>
@@ -75,6 +190,7 @@ const AdminPanel = ({ onClose, data }) => {
           ]} />
           <div className="admin-rail-label">System</div>
           <AdminNav active={section} setActive={setSection} items={[
+            { id: 'visibility', icon: 'eye', label: 'Visibility' },
             { id: 'media', icon: 'palette', label: 'Media library' },
             { id: 'settings', icon: 'settings', label: 'Settings' },
             { id: 'audit', icon: 'eye', label: 'Audit log' },
@@ -82,6 +198,7 @@ const AdminPanel = ({ onClose, data }) => {
         </aside>
 
         <main className="admin-content">
+          {section === 'visibility' && <VisibilityPanel />}
           {section === 'mishnayot' && <MishnayotTable data={data} onEdit={setEditingMishnah} />}
           {section === 'commentary' && <CommentaryAdmin />}
           {section === 'videos' && <VideosAdmin />}

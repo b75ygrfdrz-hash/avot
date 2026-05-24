@@ -28,6 +28,13 @@ migrated to a Vite + React project.
   (`const useS = useState, ...`), a leftover of the migration from the
   original concatenated-script file. Harmless, leave it.
 - Entry point: `main.jsx` renders `<ErrorBoundary><App/></ErrorBoundary>`.
+- **Mobile responsiveness is non-negotiable.** Every component, every
+  new feature, every CSS rule must work at 320px width on up. Test
+  layouts at 360, 414, 768, and desktop before considering them done.
+  Use the existing breakpoints in `src/styles/index.css` (search for
+  `@media`). Avoid fixed pixel widths on containers, prefer flex/grid
+  with min-width:0 on flex children, and verify long Hebrew strings
+  and side panels collapse cleanly on narrow viewports.
 
 ## State of the app
 
