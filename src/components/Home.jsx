@@ -15,7 +15,7 @@ const useS_o = useState, useE_o = useEffect;
 // Today's mishnah hero · Continue reading · Stats · Perek shelf · Curated highlight
 
 
-const Home = ({ data, lastRead, onJump, stats, onOpenMesorah }) => {
+const Home = ({ data, lastRead, onJump, stats, onOpenMesorah, onOpenShabbat }) => {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   // Pick today's mishnah deterministically by day-of-year
   const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
@@ -94,6 +94,35 @@ const Home = ({ data, lastRead, onJump, stats, onOpenMesorah }) => {
             <div className="home-mesorah-chain" aria-hidden="true">
               {[0, 1, 2, 3, 4, 5].map(i => <span key={i} className="home-mesorah-dot" />)}
             </div>
+          </button>
+        </section>
+
+        <section className="home-shabbat stagger-5">
+          <button className="home-shabbat-card" onClick={onOpenShabbat}>
+            <div className="home-shabbat-main">
+              <div className="home-shabbat-eyebrow">Prepare for Shabbat</div>
+              <div className="home-shabbat-title">The Shabbat Table</div>
+              <div className="home-shabbat-desc">
+                This week's mishnayot with family discussion questions. Print
+                the sheet before Shabbat, or add a gentle Friday reminder to
+                your calendar.
+              </div>
+              <span className="home-shabbat-cta">
+                Open this week's sheet
+                <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="10" x2="16" y2="10" /><polyline points="12 6 16 10 12 14" />
+                </svg>
+              </span>
+            </div>
+            <svg className="home-shabbat-art" viewBox="0 0 76 84" fill="none" aria-hidden="true">
+              <circle className="home-shabbat-glow" cx="27" cy="20" r="13" />
+              <circle className="home-shabbat-glow" cx="49" cy="20" r="13" />
+              <path className="home-shabbat-flame" d="M27 9 C21 19, 23 30, 27 30 C31 30, 33 19, 27 9 Z" />
+              <path className="home-shabbat-flame" d="M49 9 C43 19, 45 30, 49 30 C53 30, 55 19, 49 9 Z" />
+              <rect className="home-shabbat-candle" x="23" y="31" width="8" height="36" rx="2.5" />
+              <rect className="home-shabbat-candle" x="45" y="31" width="8" height="36" rx="2.5" />
+              <path className="home-shabbat-base" d="M14 70 H62" />
+            </svg>
           </button>
         </section>
 

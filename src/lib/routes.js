@@ -3,6 +3,8 @@
 //   #avot/1.14         → opens Mishnah 1:14
 //   #avot/3.6/he       → opens 3:6 Hebrew-only
 //   #avot/home         → forces the home screen
+//   #avot/chain        → opens the Chain of Mesorah
+//   #avot/shabbat      → opens the Shabbat Table
 //   #h=<text>          → highlight + scroll to a phrase (combined with above)
 
 (function () {
@@ -25,6 +27,8 @@
       } else if (parts[1] === 'chain') {
         route.kind = 'chain';
         route.focus = parts[2] || null;
+      } else if (parts[1] === 'shabbat') {
+        route.kind = 'shabbat';
       } else if (parts[1]) {
         const m = parts[1].match(/^(\d+)\.(\d+)$/);
         if (m) {

@@ -51,6 +51,8 @@ const Icon = ({ name, size = 16 }) => {
     check: <polyline points="4 10 8 14 16 6" />,
     info: <><circle cx="10" cy="10" r="7.5" /><line x1="10" y1="9" x2="10" y2="14" /><line x1="10" y1="6.3" x2="10" y2="6.5" /></>,
     mic: <><rect x="7" y="2.5" width="6" height="9" rx="3" /><path d="M4.5 10 C4.5 13 7 15.5 10 15.5 C13 15.5 15.5 13 15.5 10" /><line x1="10" y1="15.5" x2="10" y2="18" /></>,
+    candle: <><path d="M10 3 C8.6 4.8 8.8 7 10 7.6 C11.2 7 11.4 4.8 10 3 Z" /><rect x="7.8" y="8.4" width="4.4" height="7.2" rx="0.9" /><line x1="5.5" y1="16" x2="14.5" y2="16" /></>,
+    mail: <><rect x="2.5" y="4.5" width="15" height="11" rx="1.6" /><path d="M3 6 L10 11 L17 6" /></>,
   };
   return (
     <svg viewBox="0 0 20 20" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

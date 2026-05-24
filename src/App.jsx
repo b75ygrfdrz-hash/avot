@@ -8,6 +8,7 @@ import { RightPanel } from './components/RightPanel.jsx';
 import { SearchOverlay } from './components/SearchOverlay.jsx';
 import { AdminPanel } from './components/admin.jsx';
 import { MesorahTree } from './components/MesorahTree.jsx';
+import { ShabbatTable } from './components/ShabbatTable.jsx';
 import { KidsMode } from './components/kids.jsx';
 import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
@@ -87,7 +88,12 @@ const App = () => {
   const [showAdmin, setShowAdmin] = useS(false);
   const [showMesorah, setShowMesorah] = useS(false);
   const [mesorahFocus, setMesorahFocus] = useS(null);
+  const [showShabbat, setShowShabbat] = useS(false);
   const cameFromInApp = useR(false);
+  // The hash-sync effect must skip its first run: on a deep-link load it
+  // would otherwise overwrite the incoming hash before the initial-route
+  // effect's state update has settled.
+  const routeSyncFirst = useR(true);
   const [showSearch, setShowSearch] = useS(false);
   const [railCollapsed, setRailCollapsed] = useS(localStorage.getItem('avot.railCollapsed.v1') === 'true');
   const [showPicker, setShowPicker] = useS(false);
@@ -134,6 +140,8 @@ const App = () => {
     } else if (route.kind === 'chain') {
       setShowMesorah(true);
       setMesorahFocus(route.focus || null);
+    } else if (route.kind === 'shabbat') {
+      setShowShabbat(true);
     } else if (route.kind === 'home') {
       setShowHome(true);
     }
@@ -142,22 +150,30 @@ const App = () => {
   // Sync URL hash whenever position or view changes
   useE(() => {
     if (!window.AvotRoutes) return;
-    if (showMesorah) return;
+    if (routeSyncFirst.current) { routeSyncFirst.current = false; return; }
+    if (showMesorah || showShabbat) return;
     if (showHome) AvotRoutes.home();
     else if (mishnah) AvotRoutes.update(perek.num, mishnah.num, { view: layout });
-  }, [showHome, perekIdx, mishnahIdx, layout, showMesorah]);
+  }, [showHome, perekIdx, mishnahIdx, layout, showMesorah, showShabbat]);
 
   // React to manual hash changes (back/forward, paste)
   useE(() => {
     const onHash = () => {
       const route = window.AvotRoutes?.parseHash?.();
-      if (!route) { setShowMesorah(false); return; }
+      if (!route) { setShowMesorah(false); setShowShabbat(false); return; }
       if (route.kind === 'chain') {
+        setShowShabbat(false);
         setMesorahFocus(route.focus || null);
         setShowMesorah(true);
         return;
       }
+      if (route.kind === 'shabbat') {
+        setShowMesorah(false);
+        setShowShabbat(true);
+        return;
+      }
       setShowMesorah(false);
+      setShowShabbat(false);
       if (route.kind === 'mishnah') {
         const pi = data.perakim.findIndex(p => p.num === route.perek);
         if (pi >= 0) {
@@ -344,6 +360,20 @@ const App = () => {
     }
   };
 
+  // The Shabbat Table is a routed view as well
+  const openShabbat = () => {
+    cameFromInApp.current = true;
+    location.hash = '#avot/shabbat';
+  };
+  const closeShabbat = () => {
+    if (cameFromInApp.current) {
+      cameFromInApp.current = false;
+      window.history.back();
+    } else {
+      location.hash = '#avot/home';
+    }
+  };
+
   // Render
   if (!onboarded) {
     return <Onboarding setMode={setMode} onDone={() => setOnboarded(true)} />;
@@ -355,6 +385,7 @@ const App = () => {
         <Header mode={mode} setMode={setMode} perek={perek} mishnah={mishnah}
           onMenuClick={() => {}} onSearchOpen={() => setShowSearch(true)} onMemorize={() => setShowMemorize(true)}
           onAdmin={() => setShowAdmin(true)}
+          onShabbat={openShabbat}
           onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
           dark={dark} setDark={setDark} />
         {chapterEmpty ? (
@@ -377,6 +408,8 @@ const App = () => {
         {showMesorah && <MesorahTree onClose={closeMesorah}
           onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
           focusId={mesorahFocus} />}
+        {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
+          onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
       </div>
     );
   }
@@ -393,6 +426,7 @@ const App = () => {
         onAdmin={() => setShowAdmin(true)}
         onHome={() => setShowHome(true)}
         onPicker={() => setShowPicker(true)}
+        onShabbat={openShabbat}
         atHome={showHome}
         onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
         dark={dark} setDark={setDark} />
@@ -406,6 +440,7 @@ const App = () => {
               onAdmin={() => setShowAdmin(true)} />
             <Home data={data}
               onOpenMesorah={() => openMesorah()}
+              onOpenShabbat={openShabbat}
               lastRead={mishnah && (perekIdx > 0 || mishnahIdx > 0) ? {
                 perek: perek.num,
                 mishnah: mishnah.num,
@@ -470,6 +505,8 @@ const App = () => {
       {showMesorah && <MesorahTree onClose={closeMesorah}
         onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
         focusId={mesorahFocus} />}
+      {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
+        onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
       {showPicker && (
         <PerekPicker data={data} perek={perek} mishnah={mishnah}
           onClose={() => setShowPicker(false)}

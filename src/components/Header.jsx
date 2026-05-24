@@ -18,7 +18,7 @@ const useS_o = useState, useE_o = useEffect;
 // ============================================================
 // Header
 // ============================================================
-const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMemorize, dark, setDark, onAdmin, onHome, atHome, onTour, onPicker }) => {
+const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMemorize, dark, setDark, onAdmin, onHome, atHome, onTour, onPicker, onShabbat }) => {
   return (
     <header className="header">
       <div className="header-left">
@@ -51,6 +51,11 @@ const Header = ({ mode, setMode, perek, mishnah, onMenuClick, onSearchOpen, onMe
         <button className="icon-btn" onClick={onMemorize} data-tip="Memorize mode · spaced repetition" data-tip-pos="bottom" aria-label="Memorize mode">
           <Icon name="cards" />
         </button>
+        {onShabbat && (
+          <button className="icon-btn header-shabbat-btn" onClick={onShabbat} data-tip="The Shabbat Table · this week's sheet" data-tip-pos="bottom" aria-label="The Shabbat Table">
+            <Icon name="candle" />
+          </button>
+        )}
         <button className="icon-btn" onClick={onTour} data-tip="Replay the welcome tour" data-tip-pos="bottom" aria-label="Take the tour">
           <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="10" cy="10" r="7" />
