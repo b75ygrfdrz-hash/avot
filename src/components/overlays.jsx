@@ -319,53 +319,302 @@ const ParentDashboard = ({ onClose }) => {
 };
 
 // ============================================================
-// Coloring page
+// Coloring page — tap-to-fill regions, download as PNG, print
 // ============================================================
-const ColoringPage = ({ mishnah, onClose }) => {
-  const [color, setColor] = useState_m('#d97a4a');
-  const colors = ['#d97a4a', '#e8b144', '#5a8aaa', '#6aa56a', '#8a6db0', '#a85454'];
+
+const CP_COLORS = [
+  { name: 'Red',    hex: '#e74c3c' },
+  { name: 'Orange', hex: '#e8843a' },
+  { name: 'Yellow', hex: '#f0c64a' },
+  { name: 'Green',  hex: '#5aaa48' },
+  { name: 'Sky',    hex: '#85b8e0' },
+  { name: 'Blue',   hex: '#3a78d0' },
+  { name: 'Purple', hex: '#8a4fb8' },
+  { name: 'Pink',   hex: '#e0578f' },
+  { name: 'Brown',  hex: '#8a5a3a' },
+  { name: 'Tan',    hex: '#e8c89a' },
+  { name: 'Black',  hex: '#2a2a2a' },
+  { name: 'Eraser', hex: '#ffffff' },
+];
+
+// Detailed Sinai line-art for Mishnah 1:1 — Moshe receives the Torah.
+// Roughly 35 fillable regions, designed to feel like a real kids' coloring page.
+const SinaiColoringSVG = ({ fills, onFill, svgRef }) => {
+  const r = (id) => ({
+    'data-id': id,
+    fill: fills[id] || '#ffffff',
+    stroke: '#1a1a1a',
+    strokeWidth: 2.5,
+    strokeLinejoin: 'round',
+    onClick: () => onFill(id),
+    style: { cursor: 'pointer' },
+  });
   return (
-    <div className="modal-back" onClick={onClose}>
-      <div className="coloring-wrap" onClick={e => e.stopPropagation()}>
-        <div className="coloring-head">
+    <svg
+      ref={svgRef}
+      viewBox="0 0 800 1000"
+      xmlns="http://www.w3.org/2000/svg"
+      className="cp-svg"
+    >
+      {/* Outer page frame */}
+      <rect {...r('frame_outer')} x="20" y="20" width="760" height="960" rx="14" />
+      <rect {...r('frame_inner')} x="40" y="40" width="720" height="920" rx="8" />
+
+      {/* Title banner */}
+      <path {...r('banner')} d="M 200 50 L 600 50 L 624 95 L 600 140 L 200 140 L 176 95 Z" />
+      <text x="400" y="105" textAnchor="middle" fontFamily="Georgia, serif" fontSize="28" fontWeight="600" fill="none" stroke="#1a1a1a" strokeWidth="1.2">
+        From Sinai
+      </text>
+
+      {/* Sky */}
+      <path {...r('sky')} d="M 60 150 L 740 150 L 740 600 L 60 600 Z" />
+
+      {/* Sun */}
+      <circle {...r('sun')} cx="660" cy="230" r="46" />
+      <polygon {...r('ray_n')}  points="660,160 651,182 669,182" />
+      <polygon {...r('ray_e')}  points="730,230 708,221 708,239" />
+      <polygon {...r('ray_s')}  points="660,300 651,278 669,278" />
+      <polygon {...r('ray_w')}  points="590,230 612,221 612,239" />
+      <polygon {...r('ray_ne')} points="713,177 695,193 708,205" />
+      <polygon {...r('ray_se')} points="713,283 695,267 708,255" />
+      <polygon {...r('ray_sw')} points="607,283 625,267 612,255" />
+      <polygon {...r('ray_nw')} points="607,177 625,193 612,205" />
+
+      {/* Clouds */}
+      <path {...r('cloud1')} d="M 100 250 Q 110 222, 150 226 Q 165 205, 200 220 Q 230 210, 245 235 Q 260 252, 235 260 L 110 260 Q 88 260, 100 250 Z" />
+      <path {...r('cloud2')} d="M 290 320 Q 300 295, 340 299 Q 355 278, 390 295 Q 420 285, 432 308 Q 446 325, 420 330 L 305 330 Q 282 330, 290 320 Z" />
+      <path {...r('cloud3')} d="M 490 245 Q 502 222, 540 226 Q 555 208, 590 222 Q 615 235, 600 252 L 510 252 Q 488 252, 490 245 Z" />
+
+      {/* Birds */}
+      <path {...r('bird1')} d="M 200 195 Q 215 182, 230 195 Q 245 182, 260 195 L 260 200 Q 245 188, 230 200 Q 215 188, 200 200 Z" />
+      <path {...r('bird2')} d="M 360 215 Q 375 202, 390 215 Q 405 202, 420 215 L 420 220 Q 405 208, 390 220 Q 375 208, 360 220 Z" />
+      <path {...r('bird3')} d="M 460 340 Q 475 327, 490 340 Q 505 327, 520 340 L 520 345 Q 505 333, 490 345 Q 475 333, 460 345 Z" />
+
+      {/* Decorative stars */}
+      <polygon {...r('star1')} points="160,180 164,191 175,191 166,198 169,209 160,202 151,209 154,198 145,191 156,191" />
+      <polygon {...r('star2')} points="740,300 744,310 754,310 746,317 749,327 740,321 731,327 734,317 726,310 736,310" />
+      <polygon {...r('star3')} points="80,400 84,410 94,410 86,417 89,427 80,421 71,427 74,417 66,410 76,410" />
+
+      {/* Side mountain left */}
+      <polygon {...r('left_mtn')} points="60,740 230,460 380,740" />
+      <polygon {...r('left_mtn_snow')} points="208,495 230,460 252,495 240,505 220,505" />
+
+      {/* Side mountain right */}
+      <polygon {...r('right_mtn')} points="420,740 570,460 740,740" />
+      <polygon {...r('right_mtn_snow')} points="548,495 570,460 592,495 580,505 560,505" />
+
+      {/* Main Sinai mountain */}
+      <polygon {...r('sinai')} points="180,740 400,290 620,740" />
+      <polygon {...r('sinai_snow')} points="368,375 400,290 432,375 420,388 380,388" />
+
+      {/* Rays of light streaming down */}
+      <polygon {...r('ray_light_1')} points="378,450 360,580 396,580 396,450" />
+      <polygon {...r('ray_light_2')} points="404,450 404,580 440,580 422,450" />
+
+      {/* Tablets of stone */}
+      <path {...r('tablet_l')} d="M 360 488 L 360 600 Q 360 612, 372 612 L 392 612 Q 400 612, 400 602 L 400 510 Q 400 488, 380 488 Z" />
+      <path {...r('tablet_r')} d="M 400 488 L 400 602 Q 400 612, 408 612 L 428 612 Q 440 612, 440 600 L 440 510 Q 440 488, 420 488 Z" />
+      {/* Tablet engraving lines (decorative, not fillable) */}
+      <line x1="366" y1="520" x2="394" y2="520" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="366" y1="540" x2="394" y2="540" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="366" y1="560" x2="394" y2="560" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="366" y1="580" x2="394" y2="580" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="406" y1="520" x2="434" y2="520" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="406" y1="540" x2="434" y2="540" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="406" y1="560" x2="434" y2="560" stroke="#1a1a1a" strokeWidth="1.4" />
+      <line x1="406" y1="580" x2="434" y2="580" stroke="#1a1a1a" strokeWidth="1.4" />
+
+      {/* Moshe figure */}
+      <path {...r('robe')} d="M 372 740 L 372 670 Q 372 645, 400 628 Q 428 645, 428 670 L 428 740 Z" />
+      <circle {...r('head')} cx="400" cy="616" r="16" />
+      <path {...r('beard')} d="M 386 622 Q 386 648, 400 654 Q 414 648, 414 622 Z" />
+      <rect {...r('staff')} x="430" y="660" width="6" height="84" />
+
+      {/* Ground / hills */}
+      <path {...r('ground')} d="M 60 740 L 740 740 L 740 940 L 60 940 Z" />
+
+      {/* Path winding up to mountain */}
+      <path {...r('path')} d="M 340 940 L 425 940 L 412 740 L 388 740 Z" />
+
+      {/* Trees */}
+      <rect {...r('tree1_trunk')} x="100" y="830" width="26" height="80" rx="3" />
+      <ellipse {...r('tree1_leaves')} cx="113" cy="810" rx="48" ry="56" />
+      <ellipse {...r('tree1_detail')} cx="113" cy="795" rx="22" ry="22" />
+
+      <rect {...r('tree2_trunk')} x="674" y="830" width="26" height="80" rx="3" />
+      <ellipse {...r('tree2_leaves')} cx="687" cy="810" rx="48" ry="56" />
+      <ellipse {...r('tree2_detail')} cx="687" cy="795" rx="22" ry="22" />
+
+      {/* Flowers along the ground */}
+      <line x1="220" y1="895" x2="220" y2="930" stroke="#1a1a1a" strokeWidth="2.5" />
+      <circle {...r('flower1_petal')} cx="220" cy="880" r="14" />
+      <circle {...r('flower1_center')} cx="220" cy="880" r="5" />
+
+      <line x1="280" y1="910" x2="280" y2="932" stroke="#1a1a1a" strokeWidth="2.5" />
+      <circle {...r('flower2_petal')} cx="280" cy="900" r="12" />
+      <circle {...r('flower2_center')} cx="280" cy="900" r="4" />
+
+      <line x1="520" y1="905" x2="520" y2="930" stroke="#1a1a1a" strokeWidth="2.5" />
+      <circle {...r('flower3_petal')} cx="520" cy="893" r="13" />
+      <circle {...r('flower3_center')} cx="520" cy="893" r="4" />
+
+      <line x1="580" y1="895" x2="580" y2="930" stroke="#1a1a1a" strokeWidth="2.5" />
+      <circle {...r('flower4_petal')} cx="580" cy="880" r="14" />
+      <circle {...r('flower4_center')} cx="580" cy="880" r="5" />
+
+      {/* Grass tufts */}
+      <path d="M 170 935 L 175 920 L 180 935" stroke="#1a1a1a" strokeWidth="2" fill="none" />
+      <path d="M 350 938 L 355 922 L 360 938" stroke="#1a1a1a" strokeWidth="2" fill="none" />
+      <path d="M 460 938 L 465 922 L 470 938" stroke="#1a1a1a" strokeWidth="2" fill="none" />
+      <path d="M 630 935 L 635 920 L 640 935" stroke="#1a1a1a" strokeWidth="2" fill="none" />
+
+      {/* Corner ornaments */}
+      <path {...r('corner_tl')} d="M 60 60 L 110 60 L 110 75 Q 95 75, 90 90 Q 75 95, 60 95 Z" />
+      <path {...r('corner_tr')} d="M 740 60 L 690 60 L 690 75 Q 705 75, 710 90 Q 725 95, 740 95 Z" />
+      <path {...r('corner_bl')} d="M 60 940 L 110 940 L 110 925 Q 95 925, 90 910 Q 75 905, 60 905 Z" />
+      <path {...r('corner_br')} d="M 740 940 L 690 940 L 690 925 Q 705 925, 710 910 Q 725 905, 740 905 Z" />
+    </svg>
+  );
+};
+
+// Simpler placeholder for mishnayot that have not yet been illustrated.
+const SimpleColoringSVG = ({ mishnah, fills, onFill, svgRef }) => {
+  const r = (id) => ({
+    'data-id': id,
+    fill: fills[id] || '#ffffff',
+    stroke: '#1a1a1a',
+    strokeWidth: 2.5,
+    strokeLinejoin: 'round',
+    onClick: () => onFill(id),
+    style: { cursor: 'pointer' },
+  });
+  return (
+    <svg ref={svgRef} viewBox="0 0 800 1000" xmlns="http://www.w3.org/2000/svg" className="cp-svg">
+      <rect {...r('frame_outer')} x="20" y="20" width="760" height="960" rx="14" />
+      <rect {...r('frame_inner')} x="40" y="40" width="720" height="920" rx="8" />
+      <path {...r('banner')} d="M 200 50 L 600 50 L 624 95 L 600 140 L 200 140 L 176 95 Z" />
+      <text x="400" y="105" textAnchor="middle" fontFamily="Georgia, serif" fontSize="28" fontWeight="600" fill="none" stroke="#1a1a1a" strokeWidth="1.2">
+        Mishnah {mishnah.num}
+      </text>
+      {/* A simple three-pillar scene — full coloring art coming for every mishnah */}
+      <rect {...r('back')} x="60" y="160" width="680" height="780" rx="20" />
+      <rect {...r('p1_base')} x="120" y="780" width="160" height="40" />
+      <rect {...r('p1_shaft')} x="148" y="320" width="104" height="460" />
+      <rect {...r('p1_cap')} x="120" y="280" width="160" height="40" />
+      <rect {...r('p2_base')} x="320" y="780" width="160" height="40" />
+      <rect {...r('p2_shaft')} x="348" y="280" width="104" height="500" />
+      <rect {...r('p2_cap')} x="320" y="240" width="160" height="40" />
+      <rect {...r('p3_base')} x="520" y="780" width="160" height="40" />
+      <rect {...r('p3_shaft')} x="548" y="320" width="104" height="460" />
+      <rect {...r('p3_cap')} x="520" y="280" width="160" height="40" />
+      <circle {...r('sun_a')} cx="200" cy="220" r="30" />
+      <circle {...r('sun_b')} cx="600" cy="220" r="30" />
+    </svg>
+  );
+};
+
+const ColoringPage = ({ mishnah, onClose }) => {
+  const [activeColor, setActiveColor] = useState_m(CP_COLORS[5].hex); // blue
+  const [fills, setFills] = useState_m({});
+  const svgRef = useRef_m(null);
+
+  const fillRegion = (id) => {
+    setFills(prev => ({ ...prev, [id]: activeColor }));
+  };
+  const resetAll = () => setFills({});
+
+  const downloadPNG = () => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgEl);
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const W = 1600, H = 2000; // 2x viewBox for crisp PNG
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, 0, 0, W, H);
+      canvas.toBlob((pngBlob) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pngBlob);
+        link.download = `avot-coloring-mishnah-${mishnah.num}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      alert('Could not export this page. Try Print instead.');
+    };
+    img.src = url;
+  };
+
+  const printIt = () => {
+    document.body.classList.add('cp-printing');
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('cp-printing');
+    }, 50);
+  };
+
+  return (
+    <div className="modal-back cp-modal" onClick={onClose}>
+      <div className="cp-wrap" onClick={e => e.stopPropagation()}>
+        <div className="cp-toolbar">
           <div>
             <div className="memorize-eyebrow">Coloring Page</div>
-            <div className="memorize-title">Mishnah {mishnah.num}</div>
+            <div className="memorize-title" style={{fontStyle:'normal', fontFamily:'var(--serif)', fontSize: '20px'}}>
+              Mishnah {mishnah.num}
+            </div>
           </div>
-          <button className="icon-btn" onClick={onClose} style={{color:'var(--ink)'}}><Icon name="close" /></button>
+          <div className="cp-actions">
+            <button className="cp-btn" onClick={resetAll} title="Clear all colors">↺ Reset</button>
+            <button className="cp-btn" onClick={downloadPNG} title="Save your colored picture">⬇ Download PNG</button>
+            <button className="cp-btn" onClick={printIt} title="Print the blank page to color on paper">🖨 Print blank</button>
+            <button className="icon-btn cp-close" onClick={onClose} aria-label="Close" style={{color:'var(--ink)'}}>
+              <Icon name="close" />
+            </button>
+          </div>
         </div>
-        <div className="coloring-canvas">
-          <svg viewBox="0 0 400 400" width="100%" style={{maxHeight: 380}}>
-            {/* Simple line-art placeholder — three pillars */}
-            <rect x="40" y="80" width="320" height="280" fill="none" stroke="#3a2a1a" strokeWidth="3" rx="8" />
-            <text x="200" y="60" textAnchor="middle" fontFamily="var(--hebrew)" fontSize="24" fill="#3a2a1a">פרק א משנה {mishnah.num}</text>
-            {/* Three pillars */}
-            <g transform="translate(80, 150)">
-              <rect x="0" y="0" width="50" height="180" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="-10" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="180" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-            </g>
-            <g transform="translate(175, 150)">
-              <rect x="0" y="0" width="50" height="180" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="-10" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="180" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-            </g>
-            <g transform="translate(270, 150)">
-              <rect x="0" y="0" width="50" height="180" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="-10" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-              <rect x="-8" y="180" width="66" height="14" fill="none" stroke="#3a2a1a" strokeWidth="2.5" />
-            </g>
-            <text x="200" y="380" textAnchor="middle" fontSize="14" fill="#3a2a1a">— Three things the world stands on —</text>
-          </svg>
-        </div>
-        <div className="coloring-palette">
-          {colors.map(c => (
-            <button key={c} className={`crayon ${color === c ? 'active' : ''}`} style={{background: c}} onClick={() => setColor(c)} />
-          ))}
-          <div style={{flex:1}} />
-          <button className="btn-primary" style={{background:'var(--ink)', color:'var(--paper)'}}>
-            <Icon name="print" size={13} /> Print
-          </button>
+
+        <div className="cp-stage">
+          <div className="cp-palette" role="toolbar" aria-label="Color palette">
+            {CP_COLORS.map(c => (
+              <button
+                key={c.hex}
+                className={`cp-crayon ${activeColor === c.hex ? 'active' : ''} ${c.name === 'Eraser' ? 'cp-eraser' : ''}`}
+                style={{ background: c.hex }}
+                onClick={() => setActiveColor(c.hex)}
+                aria-label={c.name}
+                title={c.name}
+              >
+                {c.name === 'Eraser' && '✕'}
+              </button>
+            ))}
+          </div>
+
+          <div className="cp-canvas-wrap">
+            <div className="cp-canvas">
+              {mishnah.num === 1 ? (
+                <SinaiColoringSVG fills={fills} onFill={fillRegion} svgRef={svgRef} />
+              ) : (
+                <SimpleColoringSVG mishnah={mishnah} fills={fills} onFill={fillRegion} svgRef={svgRef} />
+              )}
+            </div>
+            <div className="cp-hint">
+              <span className="cp-hint-color" style={{ background: activeColor }} />
+              <span>Tap any region to fill it with the active color.</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

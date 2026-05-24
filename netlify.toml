@@ -1,0 +1,17 @@
+# Netlify build + deploy settings.
+# Point Netlify at this repo and these values are used automatically;
+# no manual configuration in the Netlify UI is needed.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Serve index.html for any unknown path so client-side routing (and
+# direct deep links such as /#avot/1.1) work correctly.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
