@@ -5235,7 +5235,9 @@ html.dark .save-btn { background: #ffce0a !important; color: #0F0D0A !important;
   /* Hide desktop-only icon buttons on phone — bottom nav takes over */
   .header .icon-btn[aria-label="Search"],
   .header .icon-btn[aria-label="Memorize mode"],
-  .header .icon-btn[aria-label="Take the tour"] {
+  .header .icon-btn[aria-label="Take the tour"],
+  .header .icon-btn[aria-label="The Shabbat Table"],
+  .header .icon-btn[aria-label="Home"] {
     display: none;
   }
   /* Mode switch becomes single icon-style compact */
