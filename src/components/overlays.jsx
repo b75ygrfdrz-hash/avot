@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
+import { getColoringFor, SimpleColoring } from './kidsColoring.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -604,11 +605,13 @@ const ColoringPage = ({ mishnah, onClose }) => {
 
           <div className="cp-canvas-wrap">
             <div className="cp-canvas">
-              {mishnah.num === 1 ? (
-                <SinaiColoringSVG fills={fills} onFill={fillRegion} svgRef={svgRef} />
-              ) : (
-                <SimpleColoringSVG mishnah={mishnah} fills={fills} onFill={fillRegion} svgRef={svgRef} />
-              )}
+              {(() => {
+                const Scene = getColoringFor(mishnah.num);
+                if (Scene) {
+                  return <Scene mishnah={mishnah} fills={fills} onFill={fillRegion} svgRef={svgRef} />;
+                }
+                return <SimpleColoring mishnah={mishnah} fills={fills} onFill={fillRegion} svgRef={svgRef} />;
+              })()}
             </div>
             <div className="cp-hint">
               <span className="cp-hint-color" style={{ background: activeColor }} />

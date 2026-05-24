@@ -2,6 +2,7 @@ import React from 'react';
 import { Home } from './Home.jsx';
 import { Icon } from './Icon.jsx';
 import { ILLUSTRATIONS, KidsIllustration } from './illustrations.jsx';
+import { getHeroFor } from './kidsHeroes.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -141,253 +142,16 @@ const IllustrationBanner = ({ mishnah }) => {
 };
 
 // ============================================================
-// Hero illustration — Pixar-warm storybook scenes per mishnah.
-// Currently a single lighthouse scene for Mishnah 1:1.
+// Hero illustration switcher — full scene library lives in
+// kidsHeroes.jsx. We fall back to the small banner if no hero
+// is available for the given mishnah.
 // ============================================================
-
-// Stars scattered across the upper sky. Hand-tuned positions for variety.
-const HERO_STARS = [
-  { x: 80, y: 60, r: 1.3, o: 0.85 },   { x: 160, y: 110, r: 1, o: 0.6 },
-  { x: 220, y: 50, r: 1.6, o: 0.95 },  { x: 290, y: 130, r: 0.9, o: 0.7 },
-  { x: 380, y: 90, r: 1.4, o: 0.8 },   { x: 460, y: 40, r: 1, o: 0.65 },
-  { x: 540, y: 150, r: 1.2, o: 0.75 }, { x: 620, y: 70, r: 1.5, o: 0.9 },
-  { x: 800, y: 110, r: 1, o: 0.65 },   { x: 880, y: 50, r: 1.3, o: 0.8 },
-  { x: 960, y: 140, r: 0.9, o: 0.6 },  { x: 1080, y: 80, r: 1.4, o: 0.85 },
-  { x: 1180, y: 130, r: 1, o: 0.7 },   { x: 1280, y: 60, r: 1.6, o: 0.95 },
-  { x: 1360, y: 110, r: 1.1, o: 0.75 },{ x: 1440, y: 50, r: 1.2, o: 0.85 },
-  { x: 1520, y: 130, r: 0.9, o: 0.65 },{ x: 130, y: 220, r: 0.8, o: 0.55 },
-  { x: 1490, y: 230, r: 0.9, o: 0.6 },
-];
-// Four-point sparkle stars (the bigger statement stars)
-const HERO_SPARKLES = [
-  { x: 270, y: 170, s: 6 },
-  { x: 1140, y: 180, s: 7 },
-  { x: 480, y: 280, s: 5 },
-];
-
-// One chain-of-transmission figure in silhouette with warm rim light.
-const ChainFigure = ({ x, y, scale = 1, lantern = true }) => (
-  <g transform={`translate(${x} ${y}) scale(${scale})`}>
-    {/* Robe */}
-    <path
-      d="M -16 0 L -18 -38 Q -18 -50, -8 -54 L 8 -54 Q 18 -50, 18 -38 L 16 0 Z"
-      fill="#0f0820"
-    />
-    {/* Head */}
-    <circle cx="0" cy="-60" r="8" fill="#0f0820" />
-    {/* Beard */}
-    <path d="M -5 -56 Q -5 -48, 0 -45 Q 5 -48, 5 -56 Z" fill="#070210" />
-    {/* Rim light on the leading edge (toward Sinai/the source) */}
-    <path
-      d="M -18 -38 Q -18 -50, -8 -54 L -7 -56"
-      stroke="#f0c275"
-      strokeWidth="1.4"
-      fill="none"
-      opacity="0.85"
-      strokeLinecap="round"
-    />
-    <path
-      d="M -16 -2 L -18 -38"
-      stroke="#c8825f"
-      strokeWidth="1.2"
-      fill="none"
-      opacity="0.65"
-    />
-    {/* Small carried lantern (the Torah, passing down the chain) */}
-    {lantern && (
-      <>
-        <circle cx="14" cy="-22" r="9" fill="#ffd479" opacity="0.32" />
-        <circle cx="14" cy="-22" r="4.5" fill="#fff1c2" />
-        <line x1="14" y1="-32" x2="14" y2="-28" stroke="#0f0820" strokeWidth="1.5" strokeLinecap="round" />
-      </>
-    )}
-  </g>
-);
-
-const HeroSinai = () => (
-  <svg
-    viewBox="0 0 1600 900"
-    preserveAspectRatio="xMidYMid slice"
-    className="hero-illust"
-    aria-hidden="true"
-  >
-    <defs>
-      {/* Deep dusk sky going from night to gold */}
-      <linearGradient id="hi-sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stopColor="#1a2548" />
-        <stop offset="28%"  stopColor="#3a2848" />
-        <stop offset="56%"  stopColor="#7a4d6b" />
-        <stop offset="80%"  stopColor="#c8825f" />
-        <stop offset="100%" stopColor="#f0a275" />
-      </linearGradient>
-      {/* Divine light from the top of the frame */}
-      <radialGradient id="hi-divine" cx="0.45" cy="0" r="0.85">
-        <stop offset="0%"   stopColor="#fff1c2" stopOpacity="0.95" />
-        <stop offset="22%"  stopColor="#ffd479" stopOpacity="0.55" />
-        <stop offset="55%"  stopColor="#f0a275" stopOpacity="0.22" />
-        <stop offset="100%" stopColor="#7a4d6b" stopOpacity="0" />
-      </radialGradient>
-      {/* Main mountain gradient — deep mauve to indigo */}
-      <linearGradient id="hi-mountain" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stopColor="#3e2848" />
-        <stop offset="55%"  stopColor="#1f1428" />
-        <stop offset="100%" stopColor="#0a0418" />
-      </linearGradient>
-      {/* Warm overlay on the lit side of Sinai */}
-      <linearGradient id="hi-mountain-lit" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%"   stopColor="#f0c275" stopOpacity="0.45" />
-        <stop offset="50%"  stopColor="#c8825f" stopOpacity="0.18" />
-        <stop offset="100%" stopColor="#7a4d6b" stopOpacity="0" />
-      </linearGradient>
-      {/* Halo behind the tablets */}
-      <radialGradient id="hi-halo" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0%"   stopColor="#fff1c2" stopOpacity="1" />
-        <stop offset="50%"  stopColor="#ffd479" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#ffd479" stopOpacity="0" />
-      </radialGradient>
-      {/* Soft ground haze */}
-      <linearGradient id="hi-haze" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stopColor="#c8825f" stopOpacity="0" />
-        <stop offset="100%" stopColor="#c8825f" stopOpacity="0.35" />
-      </linearGradient>
-    </defs>
-
-    {/* Sky base */}
-    <rect width="1600" height="900" fill="url(#hi-sky)" />
-
-    {/* Divine light pouring in from above */}
-    <ellipse cx="720" cy="0" rx="620" ry="720" fill="url(#hi-divine)" />
-
-    {/* Scattered stars */}
-    {HERO_STARS.map((s, i) => (
-      <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#fff1c2" opacity={s.o} />
-    ))}
-
-    {/* Sparkle stars */}
-    {HERO_SPARKLES.map((s, i) => (
-      <g key={i} transform={`translate(${s.x} ${s.y})`}>
-        <path
-          d={`M 0 -${s.s} L 1 -1 L ${s.s} 0 L 1 1 L 0 ${s.s} L -1 1 L -${s.s} 0 L -1 -1 Z`}
-          fill="#fff1c2"
-          opacity="0.95"
-        />
-      </g>
-    ))}
-
-    {/* Far mountain silhouettes (atmospheric depth) */}
-    <path
-      d="M 0 540 L 180 410 L 360 500 L 560 360 L 780 470 L 960 390 L 1180 460 L 1380 370 L 1600 430 L 1600 900 L 0 900 Z"
-      fill="#3e2848"
-      opacity="0.55"
-    />
-    {/* Near mountains */}
-    <path
-      d="M 0 640 L 200 510 L 380 600 L 580 470 L 760 580 L 980 510 L 1200 600 L 1400 510 L 1600 580 L 1600 900 L 0 900 Z"
-      fill="#241830"
-      opacity="0.8"
-    />
-
-    {/* Soft warm haze along the horizon */}
-    <rect x="0" y="520" width="1600" height="200" fill="url(#hi-haze)" />
-
-    {/* Main Sinai mountain */}
-    <polygon points="380,800 720,200 1060,800" fill="url(#hi-mountain)" />
-    {/* Lit side of Sinai (facing the light) */}
-    <polygon points="380,800 720,200 720,800" fill="url(#hi-mountain-lit)" />
-    {/* Snow / rocky cap (a small triangle near the top) */}
-    <polygon points="700,280 720,200 740,280 730,295 710,295" fill="#5a4068" opacity="0.7" />
-
-    {/* Light beam streaming from sky onto the peak */}
-    <polygon points="660,0 780,0 750,260 690,260" fill="url(#hi-divine)" opacity="0.65" />
-
-    {/* Tablets halo */}
-    <circle cx="720" cy="220" r="85" fill="url(#hi-halo)" />
-
-    {/* Moshe figure on the peak, arms raised */}
-    <g transform="translate(720 280)">
-      <path d="M -10 0 L -12 -28 Q -12 -36, -6 -38 L 6 -38 Q 12 -36, 12 -28 L 10 0 Z" fill="#0a0418" />
-      <circle cx="0" cy="-46" r="6.5" fill="#0a0418" />
-      {/* Arms raised toward the tablets */}
-      <path d="M -10 -28 Q -18 -34, -22 -46" stroke="#0a0418" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <path d="M 10 -28 Q 18 -34, 22 -46" stroke="#0a0418" strokeWidth="3" strokeLinecap="round" fill="none" />
-      {/* Rim light */}
-      <path d="M -12 -28 Q -12 -36, -6 -38" stroke="#f0c275" strokeWidth="1.5" fill="none" opacity="0.9" />
-      <path d="M -10 0 L -12 -28" stroke="#c8825f" strokeWidth="1.3" fill="none" opacity="0.7" />
-    </g>
-
-    {/* The two tablets, floating above Moshe */}
-    <g transform="translate(720 210)">
-      {/* Left tablet */}
-      <path
-        d="M -26 -28 L -26 28 Q -26 34, -20 34 L -5 34 Q -3 34, -3 28 L -3 -18 Q -3 -28, -14 -28 Z"
-        fill="#fff1c2"
-        stroke="#c8825f"
-        strokeWidth="1.6"
-      />
-      {/* Right tablet */}
-      <path
-        d="M 3 -28 L 3 28 Q 3 34, 5 34 L 20 34 Q 26 34, 26 28 L 26 -18 Q 26 -28, 14 -28 Z"
-        fill="#fff1c2"
-        stroke="#c8825f"
-        strokeWidth="1.6"
-      />
-      {/* Engraving lines */}
-      {[-14, -6, 2, 10, 18, 26].map((y, i) => (
-        <React.Fragment key={i}>
-          <line x1="-22" y1={y} x2="-7" y2={y} stroke="#c8825f" strokeWidth="0.7" opacity="0.85" />
-          <line x1="7" y1={y} x2="22" y2={y} stroke="#c8825f" strokeWidth="0.7" opacity="0.85" />
-        </React.Fragment>
-      ))}
-    </g>
-
-    {/* Light particles drifting in the lit zone */}
-    {[
-      { x: 480, y: 360 }, { x: 560, y: 420 }, { x: 640, y: 320 },
-      { x: 820, y: 380 }, { x: 880, y: 460 }, { x: 940, y: 340 },
-      { x: 1020, y: 420 },
-    ].map((p, i) => (
-      <circle key={i} cx={p.x} cy={p.y} r="1.6" fill="#fff1c2" opacity="0.7" />
-    ))}
-
-    {/* Lit path winding from the foot of Sinai out across the valley */}
-    <path
-      d="M 720 820 Q 850 800, 940 790 Q 1080 770, 1200 778 Q 1330 786, 1480 810"
-      stroke="#ffd479"
-      strokeWidth="3"
-      fill="none"
-      strokeDasharray="6 10"
-      opacity="0.55"
-    />
-
-    {/* Chain of figures along the path */}
-    <ChainFigure x={830} y={822} scale={1.0} />
-    <ChainFigure x={1000} y={826} scale={0.85} />
-    <ChainFigure x={1180} y={838} scale={0.7} />
-    <ChainFigure x={1380} y={860} scale={0.55} />
-
-    {/* Foreground silhouette (rocks, sand) */}
-    <path
-      d="M 0 800 Q 180 762, 360 786 Q 560 810, 760 798 Q 960 786, 1160 812 Q 1360 832, 1600 800 L 1600 900 L 0 900 Z"
-      fill="#0a0418"
-    />
-
-    {/* A few small rocks in the foreground */}
-    <ellipse cx="120" cy="820" rx="22" ry="9" fill="#1f1428" />
-    <ellipse cx="270" cy="850" rx="32" ry="11" fill="#1f1428" />
-    <ellipse cx="1480" cy="850" rx="36" ry="12" fill="#1f1428" />
-    <ellipse cx="1320" cy="870" rx="26" ry="9" fill="#1f1428" />
-
-    {/* Bottom warm-gold glow near the path source */}
-    <ellipse cx="760" cy="830" rx="120" ry="22" fill="#ffd479" opacity="0.18" />
-  </svg>
-);
-
-// Switcher: hero illustration when we have one, banner otherwise.
 const MishnahHero = ({ mishnah }) => {
-  if (mishnah.num === 1) {
+  const Hero = getHeroFor(mishnah.num);
+  if (Hero) {
     return (
       <div className="hero-wrap">
-        <HeroSinai />
+        <Hero />
         <div className="hero-overlay">
           <span className="hero-num">Mishnah {mishnah.num}</span>
           <div className="hero-attr">
@@ -401,13 +165,241 @@ const MishnahHero = ({ mishnah }) => {
   return <IllustrationBanner mishnah={mishnah} />;
 };
 
+
+// ============================================================
+// Read-aloud — uses the browser's built-in speech synthesis.
+// One playback at a time across the whole kids screen.
+// Hebrew uses a male voice when one is available; otherwise the
+// default Hebrew voice is pitched down to give a deeper read.
+// ============================================================
+
+// Known male voice names across platforms (macOS, iOS, Windows, Android).
+const MALE_VOICE_HINTS = [
+  // Hebrew
+  'asaf', 'arnon', 'amir',
+  // English
+  'daniel', 'alex', 'fred', 'tom', 'aaron', 'arthur', 'oliver', 'rishi',
+  'george', 'james', 'gordon', 'lee', 'rocko',
+  // Generic
+  'male',
+];
+
+function pickVoice(lang, preferMale) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  const all = window.speechSynthesis.getVoices() || [];
+  if (!all.length) return null;
+  const langKey = String(lang || '').slice(0, 2).toLowerCase();
+  const matches = all.filter(v => v.lang && v.lang.slice(0, 2).toLowerCase() === langKey);
+  if (!matches.length) return null;
+  // 1. Honor the user's explicit choice for this language, if any.
+  try {
+    const savedName = localStorage.getItem(`avot.kids.voice.${langKey}`);
+    if (savedName) {
+      const chosen = matches.find(v => v.name === savedName);
+      if (chosen) return chosen;
+    }
+  } catch (e) {}
+  // 2. Otherwise prefer a male-named voice.
+  if (preferMale) {
+    const male = matches.find(v => {
+      const n = (v.name || '').toLowerCase();
+      return MALE_VOICE_HINTS.some(h => n.includes(h));
+    });
+    if (male) return male;
+  }
+  // 3. Final fallback: the system default voice for this language.
+  const def = matches.find(v => v.default);
+  return def || matches[0];
+}
+
+function listVoicesFor(lang) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return [];
+  const all = window.speechSynthesis.getVoices() || [];
+  const langKey = String(lang || '').slice(0, 2).toLowerCase();
+  return all.filter(v => v.lang && v.lang.slice(0, 2).toLowerCase() === langKey);
+}
+
+function saveVoiceChoice(lang, voiceName) {
+  try {
+    const langKey = String(lang || '').slice(0, 2).toLowerCase();
+    if (voiceName) localStorage.setItem(`avot.kids.voice.${langKey}`, voiceName);
+    else localStorage.removeItem(`avot.kids.voice.${langKey}`);
+  } catch (e) {}
+}
+
+function getVoiceChoice(lang) {
+  try {
+    const langKey = String(lang || '').slice(0, 2).toLowerCase();
+    return localStorage.getItem(`avot.kids.voice.${langKey}`) || '';
+  } catch (e) { return ''; }
+}
+
+function useReadAloud() {
+  const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const [speakingId, setSpeakingId] = useState_k(null);
+
+  // Warm up the voice list — on Chrome it loads asynchronously.
+  useEffect(() => {
+    if (!supported) return;
+    if (window.speechSynthesis.getVoices().length) return;
+    const onChange = () => {/* triggers re-evaluation on next speak */};
+    window.speechSynthesis.addEventListener('voiceschanged', onChange);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', onChange);
+  }, [supported]);
+
+  // Cancel anything currently speaking when the component unmounts.
+  useEffect(() => () => {
+    if (supported) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }, [supported]);
+
+  const stop = () => {
+    if (!supported) return;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    setSpeakingId(null);
+  };
+
+  const speak = (id, text, lang = 'en-US') => {
+    if (!supported || !text) return;
+    if (speakingId === id) { stop(); return; }
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(String(text));
+      utter.lang = lang;
+      const isHe = lang.startsWith('he');
+      const voice = pickVoice(lang, isHe);
+      if (voice) utter.voice = voice;
+      utter.rate = isHe ? 0.85 : 0.95;
+      // For Hebrew, pitch the read down so the default female voice
+      // sounds deeper / more masculine when no male voice is installed.
+      utter.pitch = isHe ? 0.72 : 1.02;
+      utter.onend = () => setSpeakingId(null);
+      utter.onerror = () => setSpeakingId(null);
+      setSpeakingId(id);
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      setSpeakingId(null);
+    }
+  };
+
+  return { supported, speakingId, speak, stop };
+}
+
+const ReadAloudButton = ({ id, text, lang = 'en-US', label = 'Read aloud', read }) => {
+  const [pickerOpen, setPickerOpen] = useState_k(false);
+  // Force re-evaluate which voice is current after user picks one
+  // or after the browser's voice list loads asynchronously.
+  const [, force] = useState_k(0);
+  const wrapRef = useRef(null);
+
+  // Re-render when speech synthesis voices load (Chrome loads them async).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const onChange = () => force(t => t + 1);
+    window.speechSynthesis.addEventListener('voiceschanged', onChange);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDoc = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setPickerOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [pickerOpen]);
+
+  if (!read || !read.supported || !text) return null;
+  const playing = read.speakingId === id;
+  const voices = listVoicesFor(lang);
+  const currentVoice = pickVoice(lang, lang.startsWith('he'));
+  const currentName = currentVoice ? currentVoice.name : '';
+
+  const choose = (name) => {
+    saveVoiceChoice(lang, name);
+    force(t => t + 1);
+    setPickerOpen(false);
+  };
+  const clearChoice = () => {
+    saveVoiceChoice(lang, '');
+    force(t => t + 1);
+    setPickerOpen(false);
+  };
+
+  return (
+    <div className="kra-group" ref={wrapRef}>
+      <button
+        type="button"
+        className={`kra-btn ${playing ? 'is-playing' : ''}`}
+        onClick={() => read.speak(id, text, lang)}
+        aria-label={playing ? 'Stop reading' : label}
+      >
+        <span className="kra-icon" aria-hidden="true">{playing ? '⏸' : '▶'}</span>
+        <span className="kra-label">{playing ? 'Stop' : label}</span>
+      </button>
+      {voices.length > 0 && (
+        <>
+          <button
+            type="button"
+            className="kra-picker-btn"
+            onClick={() => setPickerOpen(o => !o)}
+            aria-label="Choose voice"
+            title={currentName ? `Voice: ${currentName}` : 'Choose voice'}
+          >
+            ⚙
+          </button>
+          {pickerOpen && (
+            <div className="kra-popover" role="menu">
+              <div className="kra-popover-title">Choose a voice</div>
+              <div className="kra-voice-list">
+                {voices.map(v => (
+                  <button
+                    key={v.name}
+                    type="button"
+                    className={`kra-voice ${v.name === currentName ? 'is-active' : ''}`}
+                    onClick={() => choose(v.name)}
+                  >
+                    <span className="kra-voice-name">{v.name}</span>
+                    <span className="kra-voice-lang">{v.lang}</span>
+                  </button>
+                ))}
+              </div>
+              {getVoiceChoice(lang) && (
+                <button type="button" className="kra-reset" onClick={clearChoice}>
+                  Reset to auto
+                </button>
+              )}
+              {lang.startsWith('he') && (
+                <div className="kra-tip">
+                  <strong>Want a male Hebrew voice?</strong> On macOS, open
+                  <em> System Settings → Accessibility → Spoken Content → System Voice →
+                  Customize…</em>, scroll to <em>Hebrew</em>, check <em>Asaf</em>, and
+                  click OK. It will appear in this list once downloaded.
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 // ============================================================
 // Tappable Hebrew — themed colours, persistent hint box
 // ============================================================
-const KidsHebrew = ({ mishnah }) => {
+const KidsHebrew = ({ mishnah, read }) => {
   const [tapped, setTapped] = useState_k(null);
   if (!mishnah.words || mishnah.words.length === 0) {
-    return <div className="kh-plain">{mishnah.hebrew}</div>;
+    return (
+      <div className="kh-wrap">
+        <div className="kh-toolbar">
+          <ReadAloudButton id="hebrew" text={mishnah.hebrew} lang="he-IL" label="Read in Hebrew" read={read} />
+        </div>
+        <div className="kh-plain">{mishnah.hebrew}</div>
+      </div>
+    );
   }
   const lookupMap = {};
   mishnah.words.forEach(w => {
@@ -421,6 +413,9 @@ const KidsHebrew = ({ mishnah }) => {
 
   return (
     <div className="kh-wrap">
+      <div className="kh-toolbar">
+        <ReadAloudButton id="hebrew" text={mishnah.hebrew} lang="he-IL" label="Read in Hebrew" read={read} />
+      </div>
       <div className="kh-hebrew">
         {tokens.map((tok, i) => {
           const clean = tok.trim().replace(/[׳״.,;:]/g, '');
@@ -929,11 +924,14 @@ const KidsMode = ({ perek, perakim, perekIdx, setPerekIdx, mishnah, mishnahIdx, 
   const [confetti, setConfetti] = useState_k(false);
   const [starsPop, setStarsPop] = useState_k(false);
   const [completion, setCompletion] = useState_k(false);
+  const read = useReadAloud();
 
-  // Reset transient state on mishnah/chapter change
+  // Reset transient state on mishnah/chapter change (and stop reading aloud)
   useEffect(() => {
     setPicked(null);
     setCompletion(false);
+    read.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mishnahIdx, perekIdx]);
 
   const awardStars = (n) => {
@@ -1032,11 +1030,22 @@ const KidsMode = ({ perek, perakim, perekIdx, setPerekIdx, mishnah, mishnahIdx, 
         <div className="kv2-card" key={`${perekIdx}-${mishnahIdx}`}>
           <MishnahHero mishnah={mishnah} />
 
-          <KidsHebrew mishnah={mishnah} />
+          <KidsHebrew mishnah={mishnah} read={read} />
 
-          <p className="kids-story">
-            {mishnah.kidsStory || "Story coming soon for this Mishnah! Until then, ask a grown-up to read the Hebrew with you and tell you what it means."}
-          </p>
+          <div className="kids-story-wrap">
+            <div className="kids-story-toolbar">
+              <ReadAloudButton
+                id="story"
+                text={mishnah.kidsStory || ''}
+                lang="en-US"
+                label="Read the story"
+                read={read}
+              />
+            </div>
+            <p className="kids-story">
+              {mishnah.kidsStory || "Story coming soon for this Mishnah! Until then, ask a grown-up to read the Hebrew with you and tell you what it means."}
+            </p>
+          </div>
 
           <div className="kids-actions-row">
             <button className="kids-btn secondary" onClick={onColoring}>
