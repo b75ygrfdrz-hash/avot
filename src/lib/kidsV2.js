@@ -14,7 +14,9 @@ const DEFAULT_STATE = {
   hearts: HEART_FULL,
   heartsRefillAt: null, // timestamp when next heart returns
   streak: 0,
+  longestStreak: 0,
   lastPracticeDate: null, // YYYY-MM-DD
+  practiceDates: [], // all dates with at least one completed lesson
   completed: {}, // { "1.1": { stars: 3, xpEarned: 25, completedAt: 1234567890 } }
   dailyXp: 0,
   dailyDate: null, // YYYY-MM-DD this day's XP counter applies to
@@ -92,10 +94,12 @@ export function awardXp(amount) {
   s.dailyXp += amount;
   const today = todayStr();
   if (s.lastPracticeDate !== today) {
-    // First completion today bumps streak
     s.streak = (s.streak || 0) + 1;
     s.lastPracticeDate = today;
   }
+  if (!Array.isArray(s.practiceDates)) s.practiceDates = [];
+  if (!s.practiceDates.includes(today)) s.practiceDates.push(today);
+  s.longestStreak = Math.max(s.longestStreak || 0, s.streak || 0);
   saveState(s);
   return s;
 }

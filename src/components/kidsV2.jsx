@@ -16,6 +16,16 @@ import {
   HEART_FULL,
 } from '../lib/kidsV2.js';
 import { getLesson } from '../data/kidsV2Lessons.js';
+import {
+  playCorrect,
+  playWrong,
+  playLessonComplete,
+  playPerekComplete,
+  playHeartLost,
+  isMuted,
+  setMuted,
+  onMuteChange,
+} from '../lib/kidsV2Sound.js';
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -46,19 +56,21 @@ function useKidsState() {
 }
 
 // ============================================================
-// HUD — header strip with streak, hearts, XP
+// HUD — header strip with streak, hearts, XP, mute toggle
 // ============================================================
-const Hud = ({ state, onClose }) => {
+const Hud = ({ state, onClose, onShowStreak }) => {
   const heartsArr = Array.from({ length: HEART_FULL }, (_, i) => i < state.hearts);
+  const [muted, setMutedS] = useS(isMuted());
+  useE(() => onMuteChange(() => setMutedS(isMuted())), []);
   return (
     <div className="kv2-hud">
       <button className="kv2-hud-close" onClick={onClose} aria-label="Exit Kids mode">
         <Icon name="close" size={16} />
       </button>
-      <div className="kv2-hud-item kv2-streak" title="Daily streak">
+      <button className="kv2-hud-item kv2-streak kv2-hud-btn" title="Streak calendar" onClick={onShowStreak}>
         <span className="kv2-streak-icon" aria-hidden="true">🔥</span>
         <span className="kv2-streak-num">{state.streak}</span>
-      </div>
+      </button>
       <div className="kv2-hud-item kv2-hearts" title="Lives">
         {heartsArr.map((on, i) => (
           <span key={i} className={`kv2-heart ${on ? 'on' : 'off'}`} aria-hidden="true">{on ? '♥' : '♡'}</span>
@@ -67,6 +79,72 @@ const Hud = ({ state, onClose }) => {
       <div className="kv2-hud-item kv2-xp" title="Total XP">
         <span className="kv2-xp-icon" aria-hidden="true">⭐</span>
         <span className="kv2-xp-num">{state.xp}</span>
+      </div>
+      <button className="kv2-hud-mute" onClick={() => setMuted(!muted)} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
+        {muted ? '🔇' : '🔊'}
+      </button>
+    </div>
+  );
+};
+
+// ============================================================
+// Streak Calendar — last 35 days grid
+// ============================================================
+const StreakCalendar = ({ state, onClose }) => {
+  const today = new Date();
+  const days = useMemo(() => {
+    const dates = state.practiceDates || [];
+    const set = new Set(dates);
+    const arr = [];
+    for (let i = 34; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const key = `${yyyy}-${mm}-${dd}`;
+      arr.push({ key, day: d.getDate(), weekday: d.getDay(), isToday: i === 0, practiced: set.has(key) });
+    }
+    return arr;
+  }, [state.practiceDates]);
+  const totalDays = (state.practiceDates || []).length;
+  const longest = state.longestStreak || 0;
+  return (
+    <div className="kv2-streak-modal" onClick={onClose}>
+      <div className="kv2-streak-card" onClick={e => e.stopPropagation()}>
+        <button className="kv2-streak-close" onClick={onClose} aria-label="Close">
+          <Icon name="close" size={14} />
+        </button>
+        <div className="kv2-streak-head">
+          <span className="kv2-streak-big">🔥</span>
+          <div>
+            <div className="kv2-streak-big-num">{state.streak}</div>
+            <div className="kv2-streak-big-label">day streak</div>
+          </div>
+        </div>
+        <div className="kv2-streak-grid">
+          {['S','M','T','W','T','F','S'].map((d, i) => (
+            <div key={'h'+i} className="kv2-streak-weekday">{d}</div>
+          ))}
+          {/* Pad leading empties so the first day aligns to its weekday */}
+          {Array.from({ length: days[0].weekday }).map((_, i) => (
+            <div key={'pad'+i} className="kv2-streak-cell empty" />
+          ))}
+          {days.map(d => (
+            <div
+              key={d.key}
+              className={`kv2-streak-cell ${d.practiced ? 'on' : ''} ${d.isToday ? 'today' : ''}`}
+              title={d.key + (d.practiced ? ' · practiced' : '')}
+            >
+              {d.practiced ? '🔥' : d.day}
+            </div>
+          ))}
+        </div>
+        <div className="kv2-streak-stats">
+          <div className="kv2-streak-stat"><div className="kv2-streak-stat-num">{state.streak}</div><div className="kv2-streak-stat-lbl">Current</div></div>
+          <div className="kv2-streak-stat"><div className="kv2-streak-stat-num">{longest}</div><div className="kv2-streak-stat-lbl">Longest</div></div>
+          <div className="kv2-streak-stat"><div className="kv2-streak-stat-num">{totalDays}</div><div className="kv2-streak-stat-lbl">Total days</div></div>
+        </div>
+        <p className="kv2-streak-hint">Complete one lesson a day to keep the streak alive.</p>
       </div>
     </div>
   );
@@ -546,10 +624,14 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   const total = lesson.exercises.length;
 
   function handleAnswer(correct) {
-    if (correct) correctRef.current += 1;
-    else {
+    if (correct) {
+      correctRef.current += 1;
+      playCorrect();
+    } else {
       loseHeart();
       setHeartLost(true);
+      playWrong();
+      playHeartLost();
       setTimeout(() => setHeartLost(false), 600);
     }
     setTimeout(() => {
@@ -560,6 +642,7 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
         const stars = accuracy >= 0.95 ? 3 : accuracy >= 0.75 ? 2 : 1;
         if (xpEarned > 0) awardXp(xpEarned);
         markCompleted(stop.key, stars, xpEarned);
+        playLessonComplete();
         onComplete({ stars, xpEarned, accuracy });
       } else {
         setIdx(i => i + 1);
@@ -686,7 +769,7 @@ const Confetti = ({ count = 60 }) => {
 const PerekComplete = ({ perek, stats, onContinue, hasNext }) => {
   const perekName = PEREK_NAMES_EN[perek] || `Perek ${perek}`;
   const perekHe = PEREK_NAMES_HE[perek] || '';
-  // Show all four mascots dancing
+  useE(() => { playPerekComplete(); }, []);
   return (
     <div className="kv2-perek-complete">
       <Confetti count={80} />
@@ -741,9 +824,11 @@ const LessonStub = ({ stop, onClose }) => {
 const KidsV2Home = ({ data, onOpenLesson, onClose }) => {
   const state = useKidsState();
   const stops = useMemo(() => buildPath(data.perakim), [data]);
+  const [showStreak, setShowStreak] = useS(false);
   return (
     <div className="kv2-home">
-      <Hud state={state} onClose={onClose} />
+      <Hud state={state} onClose={onClose} onShowStreak={() => setShowStreak(true)} />
+      {showStreak && <StreakCalendar state={state} onClose={() => setShowStreak(false)} />}
       <DailyGoal state={state} />
       <div className="kv2-hero">
         <div className="kv2-hero-eyebrow">Pirkei Avot</div>
