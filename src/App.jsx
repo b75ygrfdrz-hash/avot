@@ -15,7 +15,26 @@ import { AuthModal } from './components/AuthModal.jsx';
 // (6.3MB of base64 artwork). Loading them on demand drops the initial
 // bundle from ~7MB to ~700KB for Adult-mode visitors.
 const AdminPanel = React.lazy(() => import('./components/admin.jsx').then(m => ({ default: m.AdminPanel })));
-const KidsMode = React.lazy(() => import('./components/kids.jsx').then(m => ({ default: m.KidsMode })));
+
+// Two parallel Kids implementations. Toggle which one renders by
+// appending ?kids=v2 to the URL (or storing 'v2' under 'avot.kids.v')
+// in localStorage). Default is V1, the live experience. V2 is a
+// playground we can iterate on without risking V1.
+const KidsModeV1 = React.lazy(() => import('./components/kids.jsx').then(m => ({ default: m.KidsMode })));
+const KidsModeV2 = React.lazy(() => import('./components/kidsV2.jsx').then(m => ({ default: m.KidsMode })));
+
+function pickKidsVersion() {
+  try {
+    const p = new URLSearchParams(window.location.search).get('kids');
+    if (p === 'v2' || p === 'v1') {
+      localStorage.setItem('avot.kids.v', p);
+      return p;
+    }
+    return localStorage.getItem('avot.kids.v') || 'v1';
+  } catch (e) { return 'v1'; }
+}
+const KidsMode = pickKidsVersion() === 'v2' ? KidsModeV2 : KidsModeV1;
+if (typeof window !== 'undefined') window.AvotKidsVersion = pickKidsVersion();
 
 const LoadingSplash = () => (
   <div style={{position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--paper, #faf6ee)', zIndex: 9999, color:'var(--muted, #888)', fontSize:14, letterSpacing:'0.1em', textTransform:'uppercase'}}>
