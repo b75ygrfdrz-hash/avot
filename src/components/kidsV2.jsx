@@ -22,6 +22,7 @@ import {
   playLessonComplete,
   playPerekComplete,
   playHeartLost,
+  playTestTone,
   isMuted,
   setMuted,
   onMuteChange,
@@ -80,7 +81,20 @@ const Hud = ({ state, onClose, onShowStreak }) => {
         <span className="kv2-xp-icon" aria-hidden="true">⭐</span>
         <span className="kv2-xp-num">{state.xp}</span>
       </div>
-      <button className="kv2-hud-mute" onClick={() => setMuted(!muted)} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
+      <button
+        className="kv2-hud-mute"
+        onClick={() => {
+          const next = !muted;
+          setMuted(next);
+          // When turning sound ON, play a quick test tone so the user
+          // can immediately confirm audio is working.
+          if (!next) {
+            setTimeout(() => playTestTone(), 60);
+          }
+        }}
+        aria-label={muted ? 'Unmute' : 'Mute'}
+        title={muted ? 'Unmute (and play test tone)' : 'Mute'}
+      >
         {muted ? '🔇' : '🔊'}
       </button>
     </div>

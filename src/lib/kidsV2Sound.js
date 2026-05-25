@@ -8,6 +8,7 @@
 const MUTE_KEY = 'avot.kidsV2.muted';
 
 let ctx = null;
+let unlocked = false;
 
 function getCtx() {
   if (ctx) return ctx;
@@ -17,6 +18,46 @@ function getCtx() {
     ctx = new AC();
   } catch (e) { ctx = null; }
   return ctx;
+}
+
+// Browsers suspend AudioContext until the user interacts with the page.
+// Resume it on the first gesture, then unhook the listeners.
+function ensureUnlocked() {
+  if (unlocked) return;
+  const handler = () => {
+    const c = getCtx();
+    if (c && c.state === 'suspended') {
+      c.resume().catch(() => {});
+    }
+    // Prime with a silent buffer so iOS Safari finalizes the unlock
+    try {
+      const buf = c.createBuffer(1, 1, 22050);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(c.destination);
+      src.start(0);
+    } catch (e) {}
+    unlocked = true;
+    ['pointerdown', 'click', 'keydown', 'touchstart'].forEach(ev =>
+      document.removeEventListener(ev, handler)
+    );
+  };
+  ['pointerdown', 'click', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, handler, { once: false, passive: true })
+  );
+}
+
+if (typeof window !== 'undefined') {
+  ensureUnlocked();
+}
+
+// Resume just-in-time before scheduling a sound, in case the context
+// drifted back to suspended (some browsers do this).
+function resumeIfNeeded() {
+  const c = getCtx();
+  if (c && c.state === 'suspended') {
+    c.resume().catch(() => {});
+  }
 }
 
 export function isMuted() {
@@ -40,6 +81,7 @@ export function onMuteChange(handler) {
 function tone({ freq, duration = 0.18, type = 'sine', gain = 0.18, when = 0, attack = 0.005, release = 0.05 }) {
   const c = getCtx();
   if (!c || isMuted()) return;
+  resumeIfNeeded();
   const t0 = c.currentTime + when;
   const osc = c.createOscillator();
   const g = c.createGain();
@@ -59,6 +101,7 @@ function tone({ freq, duration = 0.18, type = 'sine', gain = 0.18, when = 0, att
 function slide({ from, to, duration = 0.2, type = 'sine', gain = 0.18, when = 0 }) {
   const c = getCtx();
   if (!c || isMuted()) return;
+  resumeIfNeeded();
   const t0 = c.currentTime + when;
   const osc = c.createOscillator();
   const g = c.createGain();
@@ -116,4 +159,22 @@ export function playHeartLost() {
 
 export function playTap() {
   tone({ freq: 880, duration: 0.05, gain: 0.06, type: 'sine' });
+}
+
+// Diagnostic helper: synchronously creates a context inside the gesture
+// handler and plays an obvious test tone. Use from the mute button or
+// the console (window.AvotKidsTestSound()) when sounds aren't audible.
+export function playTestTone() {
+  const c = getCtx();
+  if (!c) { console.warn('Avot: no AudioContext'); return false; }
+  if (c.state === 'suspended') {
+    c.resume().catch(() => {});
+  }
+  tone({ freq: 660, duration: 0.20, gain: 0.20 });
+  tone({ freq: 880, duration: 0.20, gain: 0.20, when: 0.18 });
+  console.log('Avot: test tone scheduled, ctx state =', c.state);
+  return true;
+}
+if (typeof window !== 'undefined') {
+  window.AvotKidsTestSound = playTestTone;
 }
