@@ -348,9 +348,87 @@ const ExChoose = ({ exercise, onAnswer }) => {
 };
 
 // ============================================================
+// Intro screen — shows the full Mishnah before the quiz starts
+// ============================================================
+const Intro = ({ stop, lesson, onStart, onExit }) => {
+  const meta = MASCOT_META[stop.animal];
+  // Look up the actual Mishnah text from window.PIRKEI_AVOT
+  const data = (typeof window !== 'undefined' && window.PIRKEI_AVOT) ? window.PIRKEI_AVOT : null;
+  const perekData = data && data.perakim.find(p => p.num === stop.perek);
+  const mishnahData = perekData && perekData.mishnayot.find(m => m.num === stop.mishnah);
+
+  const hebrew = mishnahData?.hebrew || lesson.intro || '';
+  const english = mishnahData?.english || '';
+  const attribution = mishnahData?.attribution;
+
+  const speak = () => {
+    try {
+      if (!hebrew) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(hebrew);
+      u.lang = 'he-IL';
+      u.rate = 0.8;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  };
+
+  return (
+    <div className="kv2-intro" style={{ background: meta.bg }}>
+      <div className="kv2-intro-top">
+        <button className="kv2-lesson-exit" onClick={onExit} aria-label="Exit">
+          <Icon name="close" size={18} />
+        </button>
+        <div className="kv2-intro-crumb">Perek {stop.perek} · Mishnah {stop.mishnah}</div>
+      </div>
+      <div className="kv2-intro-body">
+        <div className="kv2-intro-mascot">
+          <Mascot which={stop.animal} size={90} />
+        </div>
+        <div className="kv2-intro-title-block">
+          <h2 className="kv2-intro-title">{lesson.title}</h2>
+          {lesson.titleHe && <div className="kv2-intro-title-he" style={{ fontFamily: 'var(--hebrew)' }}>{lesson.titleHe}</div>}
+          {lesson.theme && <div className="kv2-intro-theme">{lesson.theme}</div>}
+          {attribution && (
+            <div className="kv2-intro-attribution">
+              {typeof attribution === 'string' ? attribution : (attribution.en || attribution.he)}
+            </div>
+          )}
+        </div>
+
+        <div className="kv2-intro-card">
+          <div className="kv2-intro-card-head">
+            <span className="kv2-intro-card-label">The Mishnah</span>
+            {hebrew && (
+              <button className="kv2-intro-speak" onClick={speak} aria-label="Read aloud">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
+                  <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
+                Listen
+              </button>
+            )}
+          </div>
+          {hebrew && <div className="kv2-intro-hebrew" style={{ fontFamily: 'var(--hebrew)' }}>{hebrew}</div>}
+          {english && <div className="kv2-intro-english">{english}</div>}
+        </div>
+
+        {lesson.intro && !mishnahData && (
+          <div className="kv2-intro-note">{lesson.intro}</div>
+        )}
+
+        <button className="kv2-btn kv2-btn-lg kv2-intro-go" onClick={onStart}>
+          Start lesson →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
 // Lesson runner
 // ============================================================
 const Lesson = ({ stop, lesson, onExit, onComplete }) => {
+  const [phase, setPhase] = useS('intro'); // 'intro' | 'quiz'
   const [idx, setIdx] = useS(0);
   const correctRef = useR(0);
   const [heartLost, setHeartLost] = useS(false);
@@ -382,6 +460,10 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   }
 
   if (state.hearts <= 0) return <NoHearts onClose={onExit} />;
+
+  if (phase === 'intro') {
+    return <Intro stop={stop} lesson={lesson} onStart={() => setPhase('quiz')} onExit={onExit} />;
+  }
 
   return (
     <div className={`kv2-lesson ${heartLost ? 'kv2-shake' : ''}`}>

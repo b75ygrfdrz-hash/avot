@@ -10454,6 +10454,153 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 .kv2-stop-label.locked { opacity: 0.5; }
 
+/* Intro screen — read the Mishnah first */
+.kv2-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow-y: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color: var(--kv2-ink);
+}
+.kv2-intro-top {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.5);
+  z-index: 2;
+}
+.kv2-intro-crumb {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--kv2-muted);
+}
+.kv2-intro-body {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 16px 20px 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.kv2-intro-mascot {
+  align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 116px; height: 116px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  margin-top: 8px;
+  animation: kv2-bounce 0.6s ease;
+}
+.kv2-intro-title-block { text-align: center; }
+.kv2-intro-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.kv2-intro-title-he {
+  font-size: 22px;
+  color: var(--kv2-ink);
+  margin-top: 4px;
+  opacity: 0.75;
+}
+.kv2-intro-theme {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--kv2-primary);
+  font-weight: 700;
+  margin-top: 8px;
+}
+.kv2-intro-attribution {
+  font-size: 13px;
+  color: var(--kv2-muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+.kv2-intro-card {
+  background: #fff;
+  border: 2px solid rgba(0,0,0,0.05);
+  border-radius: 18px;
+  padding: 22px 22px 24px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+}
+.kv2-intro-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.kv2-intro-card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--kv2-muted);
+  font-weight: 700;
+}
+.kv2-intro-speak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--kv2-sky);
+  color: #fff;
+  border: none;
+  border-bottom: 3px solid #2c70a3;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.kv2-intro-speak:active { transform: translateY(1px); border-bottom-width: 2px; }
+.kv2-intro-hebrew {
+  font-size: 24px;
+  line-height: 1.9;
+  text-align: right;
+  direction: rtl;
+  margin-bottom: 14px;
+}
+.kv2-intro-english {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #4a3724;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.kv2-intro-note {
+  font-size: 14px;
+  color: var(--kv2-muted);
+  text-align: center;
+  line-height: 1.5;
+  padding: 0 8px;
+}
+.kv2-intro-go {
+  align-self: center;
+  margin-top: 4px;
+  min-width: 220px;
+}
+
+@media (max-width: 480px) {
+  .kv2-intro-body { padding: 12px 16px 80px !important; gap: 14px !important; }
+  .kv2-intro-mascot { width: 100px !important; height: 100px !important; }
+  .kv2-intro-title { font-size: 22px !important; }
+  .kv2-intro-card { padding: 18px !important; }
+  .kv2-intro-hebrew { font-size: 20px !important; line-height: 1.75 !important; }
+  .kv2-intro-english { font-size: 14px !important; }
+}
+
 /* Lesson shell */
 .kv2-lesson { display: flex; flex-direction: column; }
 .kv2-lesson-top {
