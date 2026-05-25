@@ -348,6 +348,52 @@ const ExChoose = ({ exercise, onAnswer }) => {
 };
 
 // ============================================================
+// Hebrew-with-hover-translation — for the intro screen
+// ============================================================
+const HebrewWithTranslation = ({ hebrew, words }) => {
+  const [tapped, setTapped] = useS(null); // token index currently revealed
+  const lookup = useMemo(() => {
+    const m = {};
+    (words || []).forEach(w => {
+      const clean = w.he.replace(/[׳״.,;:!?־"־]/g, '');
+      m[clean] = w.en;
+    });
+    return m;
+  }, [words]);
+
+  if (!words || words.length === 0) {
+    return <span>{hebrew}</span>;
+  }
+
+  // Split by whitespace, preserving the separators
+  const tokens = hebrew.split(/(\s+)/);
+  return (
+    <span className="kv2-hbw-line">
+      {tokens.map((tok, i) => {
+        if (/^\s+$/.test(tok)) return tok;
+        const clean = tok.trim().replace(/[׳״.,;:!?־"־]/g, '');
+        const en = lookup[clean];
+        if (!en) return <span key={i}>{tok}</span>;
+        const isOpen = tapped === i;
+        return (
+          <span
+            key={i}
+            className={`kv2-hbw-word ${isOpen ? 'open' : ''}`}
+            onClick={() => setTapped(isOpen ? null : i)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTapped(isOpen ? null : i); } }}
+          >
+            {tok}
+            <span className="kv2-hbw-tip">{en}</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
+// ============================================================
 // Intro screen — shows the full Mishnah before the quiz starts
 // ============================================================
 const Intro = ({ stop, lesson, onStart, onExit }) => {
@@ -359,6 +405,7 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
 
   const hebrew = mishnahData?.hebrew || lesson.intro || '';
   const english = mishnahData?.english || '';
+  const words = mishnahData?.words || [];
   const attribution = mishnahData?.attribution;
 
   const speak = () => {
@@ -408,7 +455,14 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
               </button>
             )}
           </div>
-          {hebrew && <div className="kv2-intro-hebrew" style={{ fontFamily: 'var(--hebrew)' }}>{hebrew}</div>}
+          {hebrew && (
+            <div className="kv2-intro-hebrew" style={{ fontFamily: 'var(--hebrew)' }}>
+              <HebrewWithTranslation hebrew={hebrew} words={words} />
+            </div>
+          )}
+          {words && words.length > 0 && (
+            <div className="kv2-intro-hint">Tap any word to see its meaning</div>
+          )}
           {english && <div className="kv2-intro-english">{english}</div>}
         </div>
 
