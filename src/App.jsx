@@ -6,12 +6,22 @@ import { Onboarding } from './components/Onboarding.jsx';
 import { Reader } from './components/Reader.jsx';
 import { RightPanel } from './components/RightPanel.jsx';
 import { SearchOverlay } from './components/SearchOverlay.jsx';
-import { AdminPanel } from './components/admin.jsx';
 import { MesorahTree } from './components/MesorahTree.jsx';
 import { ShabbatTable } from './components/ShabbatTable.jsx';
 import { IdeasList } from './components/IdeasList.jsx';
 import { AuthModal } from './components/AuthModal.jsx';
-import { KidsMode } from './components/kids.jsx';
+
+// Lazy-loaded: kids.jsx and admin.jsx both pull in illustrations.jsx
+// (6.3MB of base64 artwork). Loading them on demand drops the initial
+// bundle from ~7MB to ~700KB for Adult-mode visitors.
+const AdminPanel = React.lazy(() => import('./components/admin.jsx').then(m => ({ default: m.AdminPanel })));
+const KidsMode = React.lazy(() => import('./components/kids.jsx').then(m => ({ default: m.KidsMode })));
+
+const LoadingSplash = () => (
+  <div style={{position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--paper, #faf6ee)', zIndex: 9999, color:'var(--muted, #888)', fontSize:14, letterSpacing:'0.1em', textTransform:'uppercase'}}>
+    Loading…
+  </div>
+);
 import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
 import { AvotTweaks } from './components/tweaks.jsx';
@@ -421,11 +431,13 @@ const App = () => {
               setPerekIdx={setPerekIdx} setMishnahIdx={setMishnahIdx}
               lastRead={lastReadCard} onResume={() => {}}
               onAdmin={() => setShowAdmin(true)} />
-            <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
-              mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
-              onColoring={() => setShowColoring(true)}
-              onParentDash={() => setShowParentDash(true)}
-            />
+            <React.Suspense fallback={<LoadingSplash />}>
+              <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
+                mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
+                onColoring={() => setShowColoring(true)}
+                onParentDash={() => setShowParentDash(true)}
+              />
+            </React.Suspense>
           </div>
         )}
         {showParentDash && <ParentDashboard onClose={() => setShowParentDash(false)} />}
@@ -435,7 +447,7 @@ const App = () => {
           if (pi >= 0) { setPerekIdx(pi); const mi = data.perakim[pi].mishnayot.findIndex(x => x.num === m); setMishnahIdx(Math.max(0, mi)); }
           setShowSearch(false);
         }} />}
-        {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
+        {showAdmin && <React.Suspense fallback={<LoadingSplash />}><AdminPanel data={data} onClose={() => setShowAdmin(false)} /></React.Suspense>}
         {showMesorah && <MesorahTree onClose={closeMesorah}
           onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
           focusId={mesorahFocus} />}
@@ -535,7 +547,7 @@ const App = () => {
         }
         setShowSearch(false);
       }} />}
-      {showAdmin && <AdminPanel data={data} onClose={() => setShowAdmin(false)} />}
+      {showAdmin && <React.Suspense fallback={<LoadingSplash />}><AdminPanel data={data} onClose={() => setShowAdmin(false)} /></React.Suspense>}
       {showMesorah && <MesorahTree onClose={closeMesorah}
         onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }}
         focusId={mesorahFocus} />}

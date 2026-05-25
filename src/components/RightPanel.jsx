@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
-import { Select } from './admin.jsx';
+import { Select } from './admin-shared.jsx';
 import { getHiddenCommentators, onCommentatorsChange } from '../lib/admin.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;

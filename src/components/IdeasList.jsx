@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
-import { AdminLogin } from './admin.jsx';
+import { AdminLogin } from './admin-shared.jsx';
 import { isAdminAuthed } from '../lib/admin.js';
 
 const { useState, useEffect, useRef, useMemo } = React;

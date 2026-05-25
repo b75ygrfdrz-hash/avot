@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { ILLUSTRATIONS } from './illustrations.jsx';
+import { AdminLogin, Select } from './admin-shared.jsx';
 import {
   ADMIN_PASSWORD,
   isAdminAuthed,
@@ -22,49 +23,6 @@ const useS_o = useState, useE_o = useEffect;
 
 // Admin / CMS Panel — full-screen content management view
 
-
-// Login gate shown when no admin session exists.
-const AdminLogin = ({ onAuth, onClose }) => {
-  const [pw, setPw] = useState_a('');
-  const [err, setErr] = useState_a('');
-  const submit = (e) => {
-    e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
-      setAdminAuthed(true);
-      onAuth();
-    } else {
-      setErr('Incorrect password.');
-    }
-  };
-  return (
-    <div className="admin-shell admin-login-shell" data-screen-label="Admin · Sign in">
-      <button className="admin-login-close" onClick={onClose} aria-label="Close">
-        <Icon name="close" />
-      </button>
-      <form className="admin-login-form" onSubmit={submit}>
-        <div className="admin-login-brand">
-          <span style={{fontFamily:'var(--hebrew)', color:'var(--wine)', fontSize: 30}}>אבות</span>
-          <span style={{fontFamily:'var(--serif)', fontWeight: 600, fontSize: 22}}>Avot Admin</span>
-        </div>
-        <p className="admin-login-sub">Sign in to manage content and visibility.</p>
-        <label className="admin-login-label" htmlFor="admin-pw">Password</label>
-        <input
-          id="admin-pw"
-          type="password"
-          value={pw}
-          onChange={e => { setPw(e.target.value); if (err) setErr(''); }}
-          placeholder="Enter password"
-          autoFocus
-        />
-        {err && <div className="admin-login-err">{err}</div>}
-        <button type="submit" className="admin-btn primary admin-login-btn">Sign in</button>
-        <div className="admin-login-hint">
-          (Default password is set in <code>src/lib/admin.js</code>.)
-        </div>
-      </form>
-    </div>
-  );
-};
 
 // A single toggle row for a commentator's visibility.
 const CommToggle = ({ commentator, hidden, onChange }) => (
@@ -351,13 +309,6 @@ function computeCompleteness(m) {
   if (m.words && m.words.length > 5) score += 10;
   return Math.min(100, score);
 }
-
-// Select component
-const Select = ({ value, onChange, options }) => (
-  <select className="admin-select" value={value} onChange={e => onChange(e.target.value)}>
-    {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-  </select>
-);
 
 // ============================================================
 // Mishnah edit drawer
