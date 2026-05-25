@@ -135,6 +135,18 @@ export function resetState() {
 
 const ANIMALS = ['namer', 'nesher', 'tzvi', 'ari']; // Avot 5:23 order
 
+// Lazy import to avoid a top-level circular dep — checked at build time
+// against the lesson data file's exported map.
+function lessonAvailable(perek, mishnah) {
+  try {
+    // Pull from the global lesson map (loaded by data file at module-init).
+    if (typeof window !== 'undefined' && window.__avotKidsV2Lessons) {
+      return !!window.__avotKidsV2Lessons[`${perek}.${mishnah}`];
+    }
+  } catch (e) {}
+  return false;
+}
+
 export function buildPath(perakim) {
   const stops = [];
   let idx = 0;
@@ -145,13 +157,47 @@ export function buildPath(perakim) {
         perek: perek.num,
         mishnah: m.num,
         animal: ANIMALS[idx % ANIMALS.length],
-        // For phase 1 we only have lesson data for 1:1 - 1:3.
-        hasLesson: perek.num === 1 && m.num <= 3,
+        // A stop is "playable" only when a real lesson exists for it.
+        hasLesson: lessonAvailable(perek.num, m.num),
       });
       idx++;
     }
   }
   return stops;
+}
+
+// ============================================================
+// Perek progression helpers
+// ============================================================
+// Group the path stops by perek. Returns:
+//   [{ perek: 1, stops: [...] }, { perek: 2, stops: [...] }, ...]
+export function groupByPerek(stops) {
+  const groups = [];
+  let current = null;
+  for (const s of stops) {
+    if (!current || current.perek !== s.perek) {
+      current = { perek: s.perek, stops: [] };
+      groups.push(current);
+    }
+    current.stops.push(s);
+  }
+  return groups;
+}
+
+// Has every stop in this perek with a lesson been completed?
+export function isPerekComplete(perekStops, completed) {
+  const playable = perekStops.filter(s => s.hasLesson);
+  if (playable.length === 0) return false;
+  return playable.every(s => completed[s.key]);
+}
+
+// Aggregate stats for a perek (total XP earned, average stars).
+export function perekStats(perekStops, completed) {
+  const done = perekStops.filter(s => completed[s.key]);
+  const totalXp = done.reduce((sum, s) => sum + (completed[s.key]?.xpEarned || 0), 0);
+  const totalStars = done.reduce((sum, s) => sum + (completed[s.key]?.stars || 0), 0);
+  const maxStars = done.length * 3;
+  return { totalXp, totalStars, maxStars, lessonsDone: done.length };
 }
 
 export { HEART_FULL, HEART_REFILL_MS, todayStr };

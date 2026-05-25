@@ -81,3 +81,9 @@ export const LESSONS = {
 export function getLesson(perek, mishnah) {
   return LESSONS[`${perek}.${mishnah}`] || null;
 }
+
+// Expose the map on window so buildPath can know which stops are playable
+// without creating an import cycle.
+if (typeof window !== 'undefined') {
+  window.__avotKidsV2Lessons = LESSONS;
+}

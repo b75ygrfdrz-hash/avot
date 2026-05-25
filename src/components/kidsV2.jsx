@@ -10,6 +10,9 @@ import {
   loseHeart,
   markCompleted,
   buildPath,
+  groupByPerek,
+  isPerekComplete,
+  perekStats,
   HEART_FULL,
 } from '../lib/kidsV2.js';
 import { getLesson } from '../data/kidsV2Lessons.js';
@@ -86,40 +89,91 @@ const DailyGoal = ({ state }) => {
 };
 
 // ============================================================
-// Path — skill-tree of stops
+// Section header — divides the path into perakim (levels)
+// ============================================================
+const PEREK_NAMES_EN = ['', 'Perek 1', 'Perek 2', 'Perek 3', 'Perek 4', 'Perek 5', 'Perek 6'];
+const PEREK_NAMES_HE = ['', 'פֶּרֶק א׳', 'פֶּרֶק ב׳', 'פֶּרֶק ג׳', 'פֶּרֶק ד׳', 'פֶּרֶק ה׳', 'פֶּרֶק ו׳'];
+const PEREK_THEMES = ['', 'The Chain of Tradition', 'The World Stands on Three', 'Where We Come From', 'Be a Disciple', 'Tens and Sevens', 'The Acquisition of Torah'];
+
+const SectionHeader = ({ perek, done, locked }) => (
+  <div className={`kv2-section ${done ? 'done' : ''} ${locked ? 'locked' : ''}`}>
+    <div className="kv2-section-line" />
+    <div className="kv2-section-pill">
+      <div className="kv2-section-name">{PEREK_NAMES_EN[perek] || `Perek ${perek}`}</div>
+      <div className="kv2-section-he" style={{ fontFamily: 'var(--hebrew)' }}>{PEREK_NAMES_HE[perek]}</div>
+      <div className="kv2-section-theme">{PEREK_THEMES[perek] || ''}</div>
+      {done && <div className="kv2-section-badge">✓ Complete</div>}
+      {locked && <div className="kv2-section-badge locked">🔒 Locked</div>}
+    </div>
+    <div className="kv2-section-line" />
+  </div>
+);
+
+// ============================================================
+// Path — skill-tree of stops, grouped by perek
 // ============================================================
 const Path = ({ stops, state, onPick }) => {
+  const groups = useMemo(() => {
+    const real = groupByPerek(stops);
+    // Always include all 6 perakim so the user sees the full journey,
+    // even if the later ones are empty placeholders.
+    const all = [];
+    for (let p = 1; p <= 6; p++) {
+      const found = real.find(g => g.perek === p);
+      all.push(found || { perek: p, stops: [] });
+    }
+    return all;
+  }, [stops]);
   const currentIdx = stops.findIndex(s => s.hasLesson && !state.completed[s.key]);
+  // A perek is "locked" if any earlier perek has playable stops not yet done.
+  let earlierPerekLocked = false;
   return (
     <div className="kv2-path">
-      {stops.map((stop, i) => {
-        const done = !!state.completed[stop.key];
-        const isCurrent = i === currentIdx;
-        const isLocked = !stop.hasLesson && !done;
-        const meta = MASCOT_META[stop.animal];
-        const offset = [0, 50, 80, 50, 0, -50, -80, -50][i % 8];
+      {groups.map((group, gi) => {
+        const groupComplete = group.stops.length > 0 && isPerekComplete(group.stops, state.completed);
+        // First perek is always unlocked. Later perakim wait for earlier ones.
+        const groupLocked = earlierPerekLocked;
+        // Empty perakim are placeholders — also lock subsequent ones until prior ones are filled.
+        if ((!groupComplete && group.stops.some(s => s.hasLesson)) || group.stops.length === 0) {
+          earlierPerekLocked = true;
+        }
+        let stopRelIdx = -1;
         return (
-          <div key={stop.key} className="kv2-stop-wrap" style={{ transform: `translateX(${offset}px)` }}>
-            <button
-              className={`kv2-stop ${done ? 'done' : ''} ${isCurrent ? 'current' : ''} ${isLocked ? 'locked' : ''}`}
-              onClick={() => stop.hasLesson && onPick(stop)}
-              disabled={isLocked}
-              style={{
-                background: done ? meta.color : (isCurrent ? meta.color : '#e8e3dd'),
-                boxShadow: isCurrent ? `0 6px 0 ${meta.color}aa, 0 8px 18px rgba(0,0,0,0.12)` : '0 4px 0 rgba(0,0,0,0.10)',
-              }}
-              data-tip={isLocked ? 'Coming soon' : `Perek ${stop.perek} · Mishnah ${stop.mishnah}`}
-              data-tip-pos="top"
-            >
-              {done ? (
-                <span className="kv2-stop-check">✓</span>
-              ) : (
-                <div className="kv2-stop-mascot"><Mascot which={stop.animal} size={isCurrent ? 60 : 50} /></div>
-              )}
-              {isCurrent && <span className="kv2-stop-pulse" />}
-            </button>
-            <div className={`kv2-stop-label ${isLocked ? 'locked' : ''}`}>{stop.perek}:{stop.mishnah}</div>
-          </div>
+          <React.Fragment key={group.perek}>
+            <SectionHeader perek={group.perek} done={groupComplete} locked={groupLocked} />
+            {group.stops.map((stop, si) => {
+              stopRelIdx++;
+              const done = !!state.completed[stop.key];
+              const absIdx = stops.findIndex(s => s.key === stop.key);
+              const isCurrent = absIdx === currentIdx;
+              const isLocked = (!stop.hasLesson && !done) || groupLocked;
+              const meta = MASCOT_META[stop.animal];
+              const offset = [0, 50, 80, 50, 0, -50, -80, -50][stopRelIdx % 8];
+              return (
+                <div key={stop.key} className="kv2-stop-wrap" style={{ transform: `translateX(${offset}px)` }}>
+                  <button
+                    className={`kv2-stop ${done ? 'done' : ''} ${isCurrent ? 'current' : ''} ${isLocked ? 'locked' : ''}`}
+                    onClick={() => stop.hasLesson && !groupLocked && onPick(stop)}
+                    disabled={isLocked}
+                    style={{
+                      background: done ? meta.color : (isCurrent ? meta.color : '#e8e3dd'),
+                      boxShadow: isCurrent ? `0 6px 0 ${meta.color}aa, 0 8px 18px rgba(0,0,0,0.12)` : '0 4px 0 rgba(0,0,0,0.10)',
+                    }}
+                    data-tip={groupLocked ? `Finish Perek ${group.perek - 1} first` : (isLocked ? 'Coming soon' : `Perek ${stop.perek} · Mishnah ${stop.mishnah}`)}
+                    data-tip-pos="top"
+                  >
+                    {done ? (
+                      <span className="kv2-stop-check">✓</span>
+                    ) : (
+                      <div className="kv2-stop-mascot"><Mascot which={stop.animal} size={isCurrent ? 64 : 54} /></div>
+                    )}
+                    {isCurrent && <span className="kv2-stop-pulse" />}
+                  </button>
+                  <div className={`kv2-stop-label ${isLocked ? 'locked' : ''}`}>{stop.perek}:{stop.mishnah}</div>
+                </div>
+              );
+            })}
+          </React.Fragment>
         );
       })}
     </div>
@@ -588,6 +642,85 @@ const Complete = ({ stop, result, onContinue }) => {
 };
 
 // ============================================================
+// Confetti — pure CSS particles for the level-up celebration
+// ============================================================
+const Confetti = ({ count = 60 }) => {
+  const pieces = useMemo(() => {
+    const colors = ['#ff6b6b', '#ffd23f', '#5dd39e', '#4a90c2', '#ff8a3d', '#b48ad9', '#ff8fab'];
+    return Array.from({ length: count }, () => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 1.2,
+      duration: 2.2 + Math.random() * 1.8,
+      drift: (Math.random() - 0.5) * 240,
+      rotate: Math.random() * 720 - 360,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 8 + Math.random() * 8,
+      isSquare: Math.random() > 0.5,
+    }));
+  }, [count]);
+  return (
+    <div className="kv2-confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="kv2-confetto"
+          style={{
+            left: p.left + '%',
+            background: p.color,
+            width: p.size,
+            height: p.isSquare ? p.size : p.size * 1.4,
+            borderRadius: p.isSquare ? '2px' : '50%',
+            animation: `kv2-confetto-fall ${p.duration}s linear ${p.delay}s infinite`,
+            '--drift': p.drift + 'px',
+            '--rotate': p.rotate + 'deg',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// ============================================================
+// PerekComplete — level-up celebration
+// ============================================================
+const PerekComplete = ({ perek, stats, onContinue, hasNext }) => {
+  const perekName = PEREK_NAMES_EN[perek] || `Perek ${perek}`;
+  const perekHe = PEREK_NAMES_HE[perek] || '';
+  // Show all four mascots dancing
+  return (
+    <div className="kv2-perek-complete">
+      <Confetti count={80} />
+      <div className="kv2-pc-mascots">
+        <div className="kv2-pc-mascot kv2-pc-m1"><Mascot which="namer"  size={70} /></div>
+        <div className="kv2-pc-mascot kv2-pc-m2"><Mascot which="nesher" size={70} /></div>
+        <div className="kv2-pc-mascot kv2-pc-m3"><Mascot which="tzvi"   size={70} /></div>
+        <div className="kv2-pc-mascot kv2-pc-m4"><Mascot which="ari"    size={70} /></div>
+      </div>
+      <div className="kv2-pc-eyebrow">Level Complete</div>
+      <h1 className="kv2-pc-title">{perekName} Done!</h1>
+      <div className="kv2-pc-he" style={{ fontFamily: 'var(--hebrew)' }}>{perekHe}</div>
+      <div className="kv2-pc-stats">
+        <div className="kv2-pc-stat">
+          <div className="kv2-pc-stat-num" style={{ color: '#ffd23f' }}>+{stats.totalXp}</div>
+          <div className="kv2-pc-stat-label">XP</div>
+        </div>
+        <div className="kv2-pc-stat">
+          <div className="kv2-pc-stat-num">{stats.totalStars} <span style={{ fontSize: 18, opacity: 0.4 }}>/ {stats.maxStars}</span></div>
+          <div className="kv2-pc-stat-label">Stars</div>
+        </div>
+        <div className="kv2-pc-stat">
+          <div className="kv2-pc-stat-num" style={{ color: '#5dd39e' }}>{stats.lessonsDone}</div>
+          <div className="kv2-pc-stat-label">Lessons</div>
+        </div>
+      </div>
+      <button className="kv2-btn kv2-btn-lg kv2-pc-btn" onClick={onContinue}>
+        {hasNext ? `Continue to Perek ${perek + 1} →` : 'Back to path'}
+      </button>
+    </div>
+  );
+};
+
+// ============================================================
 // Lesson coming-soon state
 // ============================================================
 const LessonStub = ({ stop, onClose }) => {
@@ -634,16 +767,48 @@ const KidsMode = ({ perek, perakim, perekIdx, setPerekIdx, mishnah, mishnahIdx, 
   const data = { perakim };
   const [activeStop, setActiveStop] = useS(null);
   const [result, setResult] = useS(null);
+  const [perekDoneFor, setPerekDoneFor] = useS(null); // perek number to celebrate
+  const allStops = useMemo(() => buildPath(perakim), [perakim]);
+  const groups = useMemo(() => groupByPerek(allStops), [allStops]);
 
   function openLesson(stop) { setActiveStop(stop); setResult(null); }
   function exitLesson() { setActiveStop(null); setResult(null); }
   function onComplete(r) { setResult(r); }
-  function backToPath() { setActiveStop(null); setResult(null); }
+  function backToPath() {
+    // Did this completion just finish a perek? Check fresh state.
+    if (activeStop) {
+      const finishedPerek = activeStop.perek;
+      const freshState = loadState();
+      const group = groups.find(g => g.perek === finishedPerek);
+      if (group && isPerekComplete(group.stops, freshState.completed)) {
+        // Only celebrate if we haven't already shown it for this perek
+        const shownKey = `avot.kidsV2.perekCelebrated.${finishedPerek}`;
+        const alreadyShown = localStorage.getItem(shownKey) === 'yes';
+        if (!alreadyShown) {
+          localStorage.setItem(shownKey, 'yes');
+          setActiveStop(null); setResult(null);
+          setPerekDoneFor(finishedPerek);
+          return;
+        }
+      }
+    }
+    setActiveStop(null); setResult(null);
+  }
+  function dismissPerekCelebration() {
+    setPerekDoneFor(null);
+  }
   function close() {
-    try { localStorage.setItem('avot.mode', 'adult'); } catch (e) {}
+    try { localStorage.setItem('avot.mode.v1', 'adult'); } catch (e) {}
     window.location.reload();
   }
 
+  if (perekDoneFor !== null) {
+    const group = groups.find(g => g.perek === perekDoneFor);
+    const freshState = loadState();
+    const stats = perekStats(group.stops, freshState.completed);
+    const hasNext = groups.some(g => g.perek === perekDoneFor + 1);
+    return <PerekComplete perek={perekDoneFor} stats={stats} hasNext={hasNext} onContinue={dismissPerekCelebration} />;
+  }
   if (activeStop && result) {
     return <Complete stop={activeStop} result={result} onContinue={backToPath} />;
   }
