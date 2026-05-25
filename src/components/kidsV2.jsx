@@ -372,7 +372,7 @@ const ExListen = ({ exercise, onAnswer }) => {
     if (revealed) return;
     setChosen(i);
     setRevealed(true);
-    setTimeout(() => onAnswer(i === exercise.answer), 750);
+    setTimeout(() => onAnswer(i === exercise.answer, exercise.choices[exercise.answer]), 750);
   }
 
   return (
@@ -422,7 +422,8 @@ const ExOrder = ({ exercise, onAnswer }) => {
     setSubmitted(true);
     const correct = picked.every((p, idx) => p === exercise.correctOrder[idx]);
     setIsCorrect(correct);
-    setTimeout(() => onAnswer(correct), 850);
+    const correctText = exercise.correctOrder.map(i => exercise.words[i]).join(' · ');
+    setTimeout(() => onAnswer(correct, correctText), 850);
   }
 
   return (
@@ -468,7 +469,7 @@ const ExChoose = ({ exercise, onAnswer }) => {
     if (revealed) return;
     setChosen(i);
     setRevealed(true);
-    setTimeout(() => onAnswer(i === exercise.answer), 750);
+    setTimeout(() => onAnswer(i === exercise.answer, exercise.choices[exercise.answer]), 750);
   }
 
   return (
@@ -573,53 +574,81 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
         </button>
         <div className="kv2-intro-crumb">Perek {stop.perek} · Mishnah {stop.mishnah}</div>
       </div>
-      <div className="kv2-intro-body">
-        <div className="kv2-intro-mascot">
-          <Mascot which={stop.animal} size={90} />
-        </div>
-        <div className="kv2-intro-title-block">
-          <h2 className="kv2-intro-title">{lesson.title}</h2>
-          {lesson.titleHe && <div className="kv2-intro-title-he" style={{ fontFamily: 'var(--hebrew)' }}>{lesson.titleHe}</div>}
-          {lesson.theme && <div className="kv2-intro-theme">{lesson.theme}</div>}
-          {attribution && (
-            <div className="kv2-intro-attribution">
-              {typeof attribution === 'string' ? attribution : (attribution.en || attribution.he)}
-            </div>
-          )}
-        </div>
-
-        <div className="kv2-intro-card">
-          <div className="kv2-intro-card-head">
-            <span className="kv2-intro-card-label">The Mishnah</span>
-            {hebrew && (
-              <button className="kv2-intro-speak" onClick={speak} aria-label="Read aloud">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
-                  <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                </svg>
-                Listen
-              </button>
+      <div className="kv2-intro-scroll">
+        <div className="kv2-intro-body">
+          <div className="kv2-intro-mascot">
+            <Mascot which={stop.animal} size={90} />
+          </div>
+          <div className="kv2-intro-title-block">
+            <h2 className="kv2-intro-title">{lesson.title}</h2>
+            {lesson.titleHe && <div className="kv2-intro-title-he" style={{ fontFamily: 'var(--hebrew)' }}>{lesson.titleHe}</div>}
+            {lesson.theme && <div className="kv2-intro-theme">{lesson.theme}</div>}
+            {attribution && (
+              <div className="kv2-intro-attribution">
+                {typeof attribution === 'string' ? attribution : (attribution.en || attribution.he)}
+              </div>
             )}
           </div>
-          {hebrew && (
-            <div className="kv2-intro-hebrew" style={{ fontFamily: 'var(--hebrew)' }}>
-              <HebrewWithTranslation hebrew={hebrew} words={words} />
+
+          <div className="kv2-intro-card">
+            <div className="kv2-intro-card-head">
+              <span className="kv2-intro-card-label">The Mishnah</span>
+              {hebrew && (
+                <button className="kv2-intro-speak" onClick={speak} aria-label="Read aloud">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
+                    <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  </svg>
+                  Listen
+                </button>
+              )}
             </div>
+            {hebrew && (
+              <div className="kv2-intro-hebrew" style={{ fontFamily: 'var(--hebrew)' }}>
+                <HebrewWithTranslation hebrew={hebrew} words={words} />
+              </div>
+            )}
+            {words && words.length > 0 && (
+              <div className="kv2-intro-hint">Tap any word to see its meaning</div>
+            )}
+            {english && <div className="kv2-intro-english">{english}</div>}
+          </div>
+
+          {lesson.intro && !mishnahData && (
+            <div className="kv2-intro-note">{lesson.intro}</div>
           )}
-          {words && words.length > 0 && (
-            <div className="kv2-intro-hint">Tap any word to see its meaning</div>
-          )}
-          {english && <div className="kv2-intro-english">{english}</div>}
         </div>
-
-        {lesson.intro && !mishnahData && (
-          <div className="kv2-intro-note">{lesson.intro}</div>
-        )}
-
+      </div>
+      <div className="kv2-intro-footer">
         <button className="kv2-btn kv2-btn-lg kv2-intro-go" onClick={onStart}>
           Start lesson →
         </button>
       </div>
+    </div>
+  );
+};
+
+// ============================================================
+// Feedback bar — slides up after every answer (Duolingo-style)
+// ============================================================
+const FeedbackBar = ({ feedback, onContinue }) => {
+  if (!feedback) return null;
+  const { correct, correctText } = feedback;
+  return (
+    <div className={`kv2-feedback-bar ${correct ? 'correct' : 'wrong'}`}>
+      <div className="kv2-fb-body">
+        <div className="kv2-fb-label">
+          {correct ? '🎉 Correct!' : '😬 Oops!'}
+        </div>
+        {!correct && correctText && (
+          <div className="kv2-fb-answer">
+            Correct answer: <strong style={{ fontFamily: correctText.match(/[֐-׿]/) ? 'var(--hebrew)' : 'inherit' }}>{correctText}</strong>
+          </div>
+        )}
+      </div>
+      <button className={`kv2-fb-btn ${correct ? 'correct' : 'wrong'}`} onClick={onContinue}>
+        {correct ? 'CONTINUE' : 'GOT IT'}
+      </button>
     </div>
   );
 };
@@ -632,12 +661,13 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   const [idx, setIdx] = useS(0);
   const correctRef = useR(0);
   const [heartLost, setHeartLost] = useS(false);
+  const [feedback, setFeedback] = useS(null); // { correct, correctText }
   const state = useKidsState();
 
   const exercise = lesson.exercises[idx];
   const total = lesson.exercises.length;
 
-  function handleAnswer(correct) {
+  function handleAnswer(correct, correctText = '') {
     if (correct) {
       correctRef.current += 1;
       playCorrect();
@@ -648,20 +678,23 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
       playHeartLost();
       setTimeout(() => setHeartLost(false), 600);
     }
-    setTimeout(() => {
-      if (idx + 1 >= total) {
-        const xpPerCorrect = 5;
-        const xpEarned = correctRef.current * xpPerCorrect;
-        const accuracy = correctRef.current / total;
-        const stars = accuracy >= 0.95 ? 3 : accuracy >= 0.75 ? 2 : 1;
-        if (xpEarned > 0) awardXp(xpEarned);
-        markCompleted(stop.key, stars, xpEarned);
-        playLessonComplete();
-        onComplete({ stars, xpEarned, accuracy });
-      } else {
-        setIdx(i => i + 1);
-      }
-    }, 250);
+    setFeedback({ correct, correctText });
+  }
+
+  function advanceLesson() {
+    setFeedback(null);
+    if (idx + 1 >= total) {
+      const xpPerCorrect = 5;
+      const xpEarned = correctRef.current * xpPerCorrect;
+      const accuracy = correctRef.current / total;
+      const stars = accuracy >= 0.95 ? 3 : accuracy >= 0.75 ? 2 : 1;
+      if (xpEarned > 0) awardXp(xpEarned);
+      markCompleted(stop.key, stars, xpEarned);
+      playLessonComplete();
+      onComplete({ stars, xpEarned, accuracy });
+    } else {
+      setIdx(i => i + 1);
+    }
   }
 
   if (state.hearts <= 0) return <NoHearts onClose={onExit} />;
@@ -671,7 +704,7 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   }
 
   return (
-    <div className={`kv2-lesson ${heartLost ? 'kv2-shake' : ''}`}>
+    <div className={`kv2-lesson ${heartLost ? 'kv2-shake' : ''} ${feedback ? 'kv2-lesson-answered' : ''}`}>
       <div className="kv2-lesson-top">
         <button className="kv2-lesson-exit" onClick={onExit} aria-label="Exit">
           <Icon name="close" size={18} />
@@ -688,6 +721,7 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
       {exercise.kind === 'listen' && <ExListen key={idx} exercise={exercise} onAnswer={handleAnswer} />}
       {exercise.kind === 'order' && <ExOrder key={idx} exercise={exercise} onAnswer={handleAnswer} />}
       {exercise.kind === 'choose' && <ExChoose key={idx} exercise={exercise} onAnswer={handleAnswer} />}
+      <FeedbackBar feedback={feedback} onContinue={advanceLesson} />
     </div>
   );
 };
