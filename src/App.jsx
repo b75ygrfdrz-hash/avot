@@ -25,16 +25,21 @@ const KidsModeV2 = React.lazy(() => import('./components/kidsV2.jsx').then(m => 
 
 function pickKidsVersion() {
   try {
-    const p = new URLSearchParams(window.location.search).get('kids');
+    // ?kids=v2 may appear in window.location.search (plain URL)
+    // or inside the hash fragment (e.g. /#avot/home?kids=v2).
+    // Check both so hash-based routing doesn't silently drop the param.
+    let p = new URLSearchParams(window.location.search).get('kids');
+    if (!p) {
+      const hashQuery = window.location.hash.split('?')[1];
+      if (hashQuery) p = new URLSearchParams(hashQuery).get('kids');
+    }
     if (p === 'v2' || p === 'v1') {
       localStorage.setItem('avot.kids.v', p);
       return p;
     }
-    return localStorage.getItem('avot.kids.v') || 'v1';
-  } catch (e) { return 'v1'; }
+    return localStorage.getItem('avot.kids.v') || 'v2';
+  } catch (e) { return 'v2'; }
 }
-const KidsMode = pickKidsVersion() === 'v2' ? KidsModeV2 : KidsModeV1;
-if (typeof window !== 'undefined') window.AvotKidsVersion = pickKidsVersion();
 
 const LoadingSplash = () => (
   <div style={{position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--paper, #faf6ee)', zIndex: 9999, color:'var(--muted, #888)', fontSize:14, letterSpacing:'0.1em', textTransform:'uppercase'}}>
@@ -87,6 +92,12 @@ const App = () => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.pos) || '{"p":0,"m":0}'); }
     catch { return { p: 0, m: 0 }; }
   })();
+
+  // Determine which Kids implementation to show. Evaluated at render time
+  // (not module-level) so the URL param and localStorage are read after the
+  // page has fully loaded and after hash-based routing has settled.
+  const [kidsVersion] = useS(() => pickKidsVersion());
+  if (typeof window !== 'undefined') window.AvotKidsVersion = kidsVersion;
 
   const [onboarded, setOnboarded] = useS(localStorage.getItem('avot.onboarded.v1') === 'true');
   const [showHome, setShowHome] = useS(true);
@@ -451,11 +462,18 @@ const App = () => {
               lastRead={lastReadCard} onResume={() => {}}
               onAdmin={() => setShowAdmin(true)} />
             <React.Suspense fallback={<LoadingSplash />}>
-              <KidsMode perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
-                mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
-                onColoring={() => setShowColoring(true)}
-                onParentDash={() => setShowParentDash(true)}
-              />
+              {kidsVersion === 'v2'
+                ? <KidsModeV2 perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
+                    mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
+                    onColoring={() => setShowColoring(true)}
+                    onParentDash={() => setShowParentDash(true)}
+                  />
+                : <KidsModeV1 perek={perek} perakim={data.perakim} perekIdx={perekIdx} setPerekIdx={setPerekIdx}
+                    mishnah={mishnah} mishnahIdx={mishnahIdx} setMishnahIdx={setMishnahIdx}
+                    onColoring={() => setShowColoring(true)}
+                    onParentDash={() => setShowParentDash(true)}
+                  />
+              }
             </React.Suspense>
           </div>
         )}
