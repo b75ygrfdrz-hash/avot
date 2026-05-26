@@ -19,8 +19,8 @@ const useS = useState, useE = useEffect, useR = useRef;
 //   2. Email + password  (with sign-in / sign-up switch + forgot password)
 //   3. OAuth buttons     (Google + Apple)
 
-const AuthModal = ({ onClose, defaultMode = 'signin' }) => {
-  const [method, setMethod] = useS('magic'); // 'magic' | 'password' | 'oauth'
+const AuthModal = ({ onClose, defaultMode = 'signin', defaultMethod = 'magic' }) => {
+  const [method, setMethod] = useS(defaultMethod); // 'magic' | 'password' | 'oauth'
   const [mode, setMode] = useS(defaultMode);  // 'signin' | 'signup'
   const [email, setEmail] = useS('');
   const [password, setPassword] = useS('');

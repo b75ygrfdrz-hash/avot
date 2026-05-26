@@ -148,6 +148,8 @@ const App = () => {
   const [showShabbat, setShowShabbat] = useS(false);
   const [showList, setShowList] = useS(false);
   const [showAuth, setShowAuth] = useS(false);
+  const [authMode, setAuthMode] = useS('signin'); // 'signin' | 'signup'
+  const openAuth = (mode = 'signin') => { setAuthMode(mode); setShowAuth(true); };
   const cameFromInApp = useR(false);
   // The hash-sync effect must skip its first run: on a deep-link load it
   // would otherwise overwrite the incoming hash before the initial-route
@@ -466,7 +468,7 @@ const App = () => {
           onAdmin={() => setShowAdmin(true)}
           onShabbat={openShabbat}
           onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
-          onOpenAuth={() => setShowAuth(true)}
+          onOpenAuth={openAuth}
           dark={dark} setDark={setDark} />
         {chapterEmpty ? (
           <EmptyChapter perek={perek} onGoToStart={() => jumpTo(1, 1)} />
@@ -506,7 +508,7 @@ const App = () => {
         {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
           onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
         {showList && <IdeasList onClose={closeList} />}
-        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} defaultMode={authMode} defaultMethod={authMode === 'signup' ? 'password' : 'magic'} />}
         {showUploadPrompt && (
           <SyncBanner syncing={syncing}
             onSave={() => doUpload(syncUser?.id)}
@@ -531,7 +533,7 @@ const App = () => {
         onShabbat={openShabbat}
         atHome={showHome}
         onTour={() => { localStorage.removeItem('avot.onboarded.v1'); setOnboarded(false); }}
-        onOpenAuth={() => setShowAuth(true)}
+        onOpenAuth={openAuth}
         dark={dark} setDark={setDark} />
       {showHome ? (
         <>
@@ -611,7 +613,7 @@ const App = () => {
       {showShabbat && <ShabbatTable data={data} onClose={closeShabbat}
         onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
       {showList && <IdeasList onClose={closeList} />}
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} defaultMode={authMode} defaultMethod={authMode === 'signup' ? 'password' : 'magic'} />}
       {showPicker && (
         <PerekPicker data={data} perek={perek} mishnah={mishnah}
           onClose={() => setShowPicker(false)}

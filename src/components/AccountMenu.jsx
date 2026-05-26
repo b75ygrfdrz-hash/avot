@@ -29,12 +29,15 @@ const AccountMenu = ({ onOpenAuth }) => {
   }
 
   if (!isConfigured || !user) {
-    // Show Sign in even when Supabase isn't wired up yet; clicking
-    // opens the modal which displays a "not configured" message.
     return (
-      <button className="acct-signin" onClick={onOpenAuth}>
-        Sign in
-      </button>
+      <div className="acct-auth-btns">
+        <button className="acct-login" onClick={() => onOpenAuth('signin')}>
+          Log in
+        </button>
+        <button className="acct-signup" onClick={() => onOpenAuth('signup')}>
+          Sign up
+        </button>
+      </div>
     );
   }
 
