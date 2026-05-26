@@ -9,6 +9,13 @@ const CHANGE_EVENT = 'avot:kidsV2-changed';
 const HEART_FULL = 5;
 const HEART_REFILL_MS = 30 * 60 * 1000; // one heart back every 30 minutes
 
+// Zuzim — ancient Judean silver coins, used as the in-app currency.
+// Earned by completing lessons; spent to refill hearts.
+const ZUZIM_PER_LESSON   = 3;   // base reward per lesson
+const ZUZIM_PERFECT_BONUS = 5;  // extra for a 3-star (≥95% accuracy) lesson
+const ZUZIM_HEART_COST    = 10; // cost to refill one heart
+const ZUZIM_FULL_COST     = 25; // cost to refill all hearts at once
+
 const DEFAULT_STATE = {
   xp: 0,
   hearts: HEART_FULL,
@@ -21,6 +28,7 @@ const DEFAULT_STATE = {
   dailyXp: 0,
   dailyDate: null, // YYYY-MM-DD this day's XP counter applies to
   dailyGoal: 30,
+  zuzim: 0,       // spendable coin balance
 };
 
 function todayStr() {
@@ -204,4 +212,48 @@ export function perekStats(perekStops, completed) {
   return { totalXp, totalStars, maxStars, lessonsDone: done.length };
 }
 
-export { HEART_FULL, HEART_REFILL_MS, todayStr };
+// ============================================================
+// Zuzim helpers
+// ============================================================
+
+export function awardZuzim(amount) {
+  const s = loadState();
+  s.zuzim = (s.zuzim || 0) + amount;
+  saveState(s);
+  return s;
+}
+
+// Spend zuzim. Returns true on success, false if insufficient balance.
+export function spendZuzim(amount) {
+  const s = loadState();
+  if ((s.zuzim || 0) < amount) return false;
+  s.zuzim -= amount;
+  saveState(s);
+  return true;
+}
+
+// Refill one heart for ZUZIM_HEART_COST. Returns true on success.
+export function refillOneHeart() {
+  const s = loadState();
+  if (s.hearts >= HEART_FULL) return false;
+  if ((s.zuzim || 0) < ZUZIM_HEART_COST) return false;
+  s.hearts = Math.min(HEART_FULL, s.hearts + 1);
+  s.zuzim -= ZUZIM_HEART_COST;
+  if (s.hearts >= HEART_FULL) s.heartsRefillAt = null;
+  saveState(s);
+  return true;
+}
+
+// Refill all hearts for ZUZIM_FULL_COST. Returns true on success.
+export function refillAllHearts() {
+  const s = loadState();
+  if (s.hearts >= HEART_FULL) return false;
+  if ((s.zuzim || 0) < ZUZIM_FULL_COST) return false;
+  s.hearts = HEART_FULL;
+  s.heartsRefillAt = null;
+  s.zuzim -= ZUZIM_FULL_COST;
+  saveState(s);
+  return true;
+}
+
+export { HEART_FULL, HEART_REFILL_MS, todayStr, ZUZIM_PER_LESSON, ZUZIM_PERFECT_BONUS, ZUZIM_HEART_COST, ZUZIM_FULL_COST };

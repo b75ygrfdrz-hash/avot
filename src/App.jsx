@@ -50,6 +50,7 @@ import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
 import { AvotTweaks } from './components/tweaks.jsx';
 import { useSync } from './lib/useSync.js';
+import { Splash } from './components/Splash.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -93,6 +94,8 @@ const App = () => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.pos) || '{"p":0,"m":0}'); }
     catch { return { p: 0, m: 0 }; }
   })();
+
+  const [showSplash, setShowSplash] = useS(true);
 
   // Determine which Kids implementation to show. Evaluated at render time
   // (not module-level) so the URL param and localStorage are read after the
@@ -451,6 +454,8 @@ const App = () => {
   };
 
   // Render
+  if (showSplash) return <Splash onDone={() => setShowSplash(false)} />;
+
   if (!onboarded) {
     return <Onboarding setMode={setMode} onDone={() => setOnboarded(true)} />;
   }

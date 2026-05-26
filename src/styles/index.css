@@ -1,3 +1,94 @@
+/* ================================================================
+   Splash screen — Torah-themed opening animation
+   Deep dark parchment, self-drawing menorah, Hebrew title fade-in.
+   ================================================================ */
+.splash-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #1a0d05;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.45s ease;
+}
+.splash-out { opacity: 0; pointer-events: none; }
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+/* Self-drawing menorah */
+.splash-menorah {
+  width: min(200px, 52vw);
+  height: auto;
+  display: block;
+  margin-bottom: 20px;
+}
+
+@keyframes splash-draw {
+  to { stroke-dashoffset: 0; }
+}
+.splash-m-path {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: splash-draw 0.38s ease-out forwards;
+}
+
+@keyframes splash-flame-in {
+  from { opacity: 0; transform: scale(0) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.splash-flame {
+  opacity: 0;
+  transform-origin: center bottom;
+  animation: splash-flame-in 0.22s ease-out forwards;
+  filter: drop-shadow(0 0 4px #f5d878);
+}
+
+/* Title text */
+@keyframes splash-text-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.splash-title, .splash-subtitle, .splash-eng {
+  opacity: 0;
+}
+.splash-text-in {
+  animation: splash-text-up 0.45s ease-out forwards;
+}
+
+.splash-title {
+  font-family: var(--hebrew, 'Frank Ruhl Libre', serif);
+  font-size: clamp(52px, 14vw, 72px);
+  font-weight: 700;
+  color: #f5d878;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 32px rgba(212,168,67,0.5);
+  direction: rtl;
+}
+.splash-subtitle {
+  font-family: var(--hebrew, 'Frank Ruhl Libre', serif);
+  font-size: clamp(15px, 4vw, 20px);
+  color: #c8a84b;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+  direction: rtl;
+}
+.splash-eng {
+  font-size: clamp(11px, 3vw, 13px);
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 10px;
+  font-style: italic;
+}
+
 /* ============================================
    Avot — Design System
    Modern editorial, warm paper, deep ink
@@ -10432,6 +10523,8 @@ img, svg, video { max-width: 100%; height: auto; }
 .kv2-heart.off { color: #ddd; }
 .kv2-xp { margin-left: auto; }
 .kv2-xp-num { color: var(--kv2-gold-dark); }
+.kv2-zuzim { gap: 4px; }
+.kv2-zuzim-num { color: #8a6000; font-weight: 800; font-size: 14px; }
 
 .kv2-hud-btn {
   background: transparent;
@@ -11569,7 +11662,26 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 .kv2-no-hearts-icon { font-size: 80px; margin-bottom: 12px; }
 .kv2-no-hearts h2 { font-size: 28px; margin: 0 0 8px; }
-.kv2-no-hearts p { color: var(--kv2-muted); margin: 0 0 24px; max-width: 320px; }
+.kv2-no-hearts p { color: var(--kv2-muted); margin: 0 0 16px; max-width: 320px; }
+.kv2-no-hearts-hint { font-size: 13px; color: var(--kv2-muted); margin: 0 0 20px; display: flex; align-items: center; gap: 4px; justify-content: center; }
+.kv2-btn-zuzim {
+  background: #d4a843;
+  border-bottom-color: #a07820;
+  color: #3a2000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.kv2-btn-zuzim:hover { background: #c99c38; }
+.kv2-btn-ghost {
+  background: transparent;
+  border: 2px solid var(--kv2-muted, #aaa);
+  border-bottom-width: 2px;
+  color: var(--kv2-muted, #aaa);
+  box-shadow: none;
+}
+.kv2-btn-ghost:hover { background: rgba(0,0,0,0.05); }
 
 /* Stub */
 .kv2-stub {

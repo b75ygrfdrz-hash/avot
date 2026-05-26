@@ -13,7 +13,14 @@ import {
   groupByPerek,
   isPerekComplete,
   perekStats,
+  awardZuzim,
+  refillOneHeart,
+  refillAllHearts,
   HEART_FULL,
+  ZUZIM_PER_LESSON,
+  ZUZIM_PERFECT_BONUS,
+  ZUZIM_HEART_COST,
+  ZUZIM_FULL_COST,
 } from '../lib/kidsV2.js';
 import { getLesson } from '../data/kidsV2Lessons.js';
 import {
@@ -57,6 +64,19 @@ function useKidsState() {
 }
 
 // ============================================================
+// ZuzimCoin — inline SVG of an ancient coin with ז glyph
+// ============================================================
+const ZuzimCoin = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+    <circle cx="12" cy="12" r="10.5" fill="#d4a843" />
+    <circle cx="12" cy="12" r="10.5" fill="none" stroke="#b8891e" strokeWidth="1" />
+    <circle cx="12" cy="12" r="8.2" fill="none" stroke="#b8891e" strokeWidth="0.6" strokeDasharray="2 1.5" />
+    <text x="12" y="16.5" textAnchor="middle" fontSize="11" fontWeight="bold"
+      fill="#7a5200" fontFamily="serif" style={{ userSelect: 'none' }}>ז</text>
+  </svg>
+);
+
+// ============================================================
 // HUD — header strip with streak, hearts, XP, mute toggle
 // ============================================================
 const Hud = ({ state, onClose, onShowStreak }) => {
@@ -80,6 +100,10 @@ const Hud = ({ state, onClose, onShowStreak }) => {
       <div className="kv2-hud-item kv2-xp" title="Total XP">
         <span className="kv2-xp-icon" aria-hidden="true">⭐</span>
         <span className="kv2-xp-num">{state.xp}</span>
+      </div>
+      <div className="kv2-hud-item kv2-zuzim" title="Zuzim — spend to refill hearts">
+        <ZuzimCoin size={16} />
+        <span className="kv2-zuzim-num">{state.zuzim || 0}</span>
       </div>
       <button
         className="kv2-hud-mute"
@@ -690,14 +714,17 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
       const stars = accuracy >= 0.95 ? 3 : accuracy >= 0.75 ? 2 : 1;
       if (xpEarned > 0) awardXp(xpEarned);
       markCompleted(stop.key, stars, xpEarned);
+      // Award Zuzim: base per lesson + bonus for a perfect/3-star run
+      const zuzimEarned = ZUZIM_PER_LESSON + (stars === 3 ? ZUZIM_PERFECT_BONUS : 0);
+      awardZuzim(zuzimEarned);
       playLessonComplete();
-      onComplete({ stars, xpEarned, accuracy });
+      onComplete({ stars, xpEarned, accuracy, zuzimEarned });
     } else {
       setIdx(i => i + 1);
     }
   }
 
-  if (state.hearts <= 0) return <NoHearts onClose={onExit} />;
+  if (state.hearts <= 0) return <NoHearts onClose={onExit} onResume={() => setPhase('quiz')} />;
 
   if (phase === 'intro') {
     return <Intro stop={stop} lesson={lesson} onStart={() => setPhase('quiz')} onExit={onExit} />;
@@ -729,14 +756,31 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
 // ============================================================
 // No-hearts state
 // ============================================================
-const NoHearts = ({ onClose }) => (
-  <div className="kv2-no-hearts">
-    <div className="kv2-no-hearts-icon">💔</div>
-    <h2>Out of lives!</h2>
-    <p>Take a break and come back in a bit. Lives refill over time.</p>
-    <button className="kv2-btn" onClick={onClose}>Back to path</button>
-  </div>
-);
+const NoHearts = ({ onClose, onResume }) => {
+  const state = useKidsState();
+  const canRefill = (state.zuzim || 0) >= ZUZIM_FULL_COST;
+  const handleRefill = () => {
+    if (refillAllHearts()) onResume?.();
+  };
+  return (
+    <div className="kv2-no-hearts">
+      <div className="kv2-no-hearts-icon">💔</div>
+      <h2>Out of lives!</h2>
+      <p>Hearts refill over time — or spend Zuzim to continue now.</p>
+      {canRefill ? (
+        <button className="kv2-btn kv2-btn-zuzim" onClick={handleRefill}>
+          <ZuzimCoin size={18} /> Refill all hearts · {ZUZIM_FULL_COST} ז
+        </button>
+      ) : (
+        <p className="kv2-no-hearts-hint">
+          You need {ZUZIM_FULL_COST} <ZuzimCoin size={13} /> Zuzim to refill.
+          You have {state.zuzim || 0}.
+        </p>
+      )}
+      <button className="kv2-btn kv2-btn-ghost" onClick={onClose}>Back to path</button>
+    </div>
+  );
+};
 
 // ============================================================
 // Lesson complete screen
