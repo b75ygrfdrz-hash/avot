@@ -49,6 +49,7 @@ const LoadingSplash = () => (
 import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
 import { AvotTweaks } from './components/tweaks.jsx';
+import { useSync } from './lib/useSync.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -113,6 +114,20 @@ const App = () => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.highlights) || '[]');
     } catch { return []; }
+  });
+
+  // Sync highlights + kids progress to/from Supabase on sign-in.
+  const onMergeHighlights = useC((remoteHls) => {
+    setHighlights(prev => {
+      const ids = new Set(prev.map(h => h.id));
+      const newOnes = remoteHls.filter(h => !ids.has(h.id));
+      return newOnes.length ? [...prev, ...newOnes] : prev;
+    });
+  }, []);
+
+  const { syncUser, showUploadPrompt, syncing, doUpload, dismissUpload } = useSync({
+    highlights,
+    onMergeHighlights,
   });
 
   const [selPos, setSelPos] = useS(null);
@@ -492,6 +507,11 @@ const App = () => {
           onJump={(p, m) => { location.hash = '#avot/' + p + '.' + m; }} />}
         {showList && <IdeasList onClose={closeList} />}
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+        {showUploadPrompt && (
+          <SyncBanner syncing={syncing}
+            onSave={() => doUpload(syncUser?.id)}
+            onDismiss={() => dismissUpload(syncUser?.id)} />
+        )}
       </div>
     );
   }
@@ -608,8 +628,30 @@ const App = () => {
       {mishnah && <MobilePanelSheet open={mobileSheet && !showHome}
         onClose={() => setMobileSheet(false)}
         mishnah={mishnah} perek={perek} highlights={highlights} />}
+      {showUploadPrompt && (
+        <SyncBanner syncing={syncing}
+          onSave={() => doUpload(syncUser?.id)}
+          onDismiss={() => dismissUpload(syncUser?.id)} />
+      )}
     </div>
   );
 };
+
+// Upload-prompt banner — shown once per account on first sign-in when
+// local data exists but Supabase is empty.
+const SyncBanner = ({ syncing, onSave, onDismiss }) => (
+  <div className="sync-banner" role="status">
+    <span className="sync-banner-icon">☁️</span>
+    <span className="sync-banner-text">
+      Save your highlights and progress to your account?
+    </span>
+    <button className="sync-banner-save" onClick={onSave} disabled={syncing}>
+      {syncing ? 'Saving…' : 'Save'}
+    </button>
+    <button className="sync-banner-dismiss" onClick={onDismiss} disabled={syncing} aria-label="Dismiss">
+      Not now
+    </button>
+  </div>
+);
 
 export { App, STORAGE_KEYS };

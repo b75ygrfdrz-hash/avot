@@ -1,10 +1,24 @@
 // Admin auth + content-visibility helpers.
 //
-// The admin password is hard-coded here for now; change ADMIN_PASSWORD
-// below to anything you like. A real backend would replace this with
-// proper auth.
+// Two ways to authenticate as admin:
+//   1. Password — the hardcoded ADMIN_PASSWORD below (change it freely).
+//   2. Supabase role — if the signed-in user's profiles.role === 'admin'
+//      they bypass the password entirely. Set this in the Supabase dashboard:
+//      Table Editor -> profiles -> find the row -> set role to 'admin'.
+
+import { getProfile } from './supabase.js';
 
 export const ADMIN_PASSWORD = 'avot-admin';
+
+// Returns true if the currently signed-in Supabase user has admin role.
+// Always resolves (never rejects) — returns false on any error.
+export async function checkAdminRole(userId) {
+  if (!userId) return false;
+  try {
+    const profile = await getProfile(userId);
+    return profile?.role === 'admin';
+  } catch (e) { return false; }
+}
 
 const AUTH_KEY = 'avot.admin.auth';
 const HIDDEN_COMMS_KEY = 'avot.commentators.hidden';

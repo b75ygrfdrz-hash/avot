@@ -84,3 +84,110 @@ export async function resetPassword(email) {
     redirectTo: window.location.origin + '/#avot/home',
   });
 }
+
+// =========================================================================
+// Data sync helpers (Phase 2)
+// =========================================================================
+
+// Map a local highlight object to the Supabase row shape.
+function hlToRow(h, userId) {
+  return {
+    id: h.id,
+    user_id: userId,
+    perek: h.perek,
+    mishnah: h.mishnah,
+    text: h.text,
+    start_offset: h.start ?? null,
+    end_offset: h.end ?? null,
+    color: h.color || 'yellow',
+    note: h.note || '',
+    tags: h.tags || [],
+    lang: h.lang || 'en',
+    created_at: h.createdAt || new Date().toISOString(),
+  };
+}
+
+// Map a Supabase row back to the local highlight shape.
+function rowToHl(r) {
+  return {
+    id: r.id,
+    perek: r.perek,
+    mishnah: r.mishnah,
+    lang: r.lang,
+    text: r.text,
+    start: r.start_offset,
+    end: r.end_offset,
+    color: r.color,
+    note: r.note,
+    tags: r.tags || [],
+    createdAt: r.created_at,
+  };
+}
+
+export async function uploadHighlights(userId, highlights) {
+  if (!supabase || !highlights?.length) return { error: null };
+  try {
+    const rows = highlights.map(h => hlToRow(h, userId));
+    return await supabase.from('highlights').upsert(rows, { onConflict: 'id' });
+  } catch (e) { return { error: e }; }
+}
+
+export async function fetchHighlights(userId) {
+  if (!supabase) return { data: [], error: null };
+  try {
+    const { data, error } = await supabase
+      .from('highlights')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at');
+    if (error) return { data: [], error };
+    return { data: (data || []).map(rowToHl), error: null };
+  } catch (e) { return { data: [], error: e }; }
+}
+
+export async function uploadKidsV2State(userId, state) {
+  if (!supabase) return { error: null };
+  try {
+    return await supabase.from('kidsv2_state').upsert(
+      { user_id: userId, state, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  } catch (e) { return { error: e }; }
+}
+
+export async function fetchKidsV2State(userId) {
+  if (!supabase) return { data: null, error: null };
+  try {
+    const { data, error } = await supabase
+      .from('kidsv2_state')
+      .select('state')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return { data: data?.state || null, error };
+  } catch (e) { return { data: null, error: e }; }
+}
+
+// Returns true if this user already has any data stored in Supabase.
+export async function hasAnyData(userId) {
+  if (!supabase) return false;
+  try {
+    const [{ data: h }, { data: k }] = await Promise.all([
+      supabase.from('highlights').select('id').eq('user_id', userId).limit(1),
+      supabase.from('kidsv2_state').select('user_id').eq('user_id', userId).limit(1),
+    ]);
+    return !!(h?.length || k?.length);
+  } catch (e) { return false; }
+}
+
+// Fetch the profile row for a user (role, display_name).
+export async function getProfile(userId) {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role, display_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+    return data || null;
+  } catch (e) { return null; }
+}

@@ -9527,6 +9527,71 @@ html.theme-transition *::after {
 .admin-toggle.is-on .admin-toggle-state { color: #2e7d32; }
 
 /* ================================================================
+   Sync banner — "save local data?" prompt shown after first sign-in
+   ================================================================ */
+.sync-banner {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--paper, #faf6ee);
+  border: 1px solid var(--border, #e8e0d0);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  max-width: min(480px, calc(100vw - 32px));
+  width: max-content;
+  animation: sync-banner-up 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes sync-banner-up {
+  from { transform: translateX(-50%) translateY(120%); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+}
+.sync-banner-icon { font-size: 18px; flex-shrink: 0; }
+.sync-banner-text {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--ink, #2c2417);
+  line-height: 1.35;
+  min-width: 0;
+}
+.sync-banner-save {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--wine, #6b2737);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.sync-banner-save:disabled { opacity: 0.6; cursor: default; }
+.sync-banner-dismiss {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--muted, #888);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.sync-banner-dismiss:hover { color: var(--ink, #2c2417); }
+@media (max-width: 480px) {
+  .sync-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+    bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
+  }
+  .sync-banner-text { flex-basis: 100%; }
+}
+
+/* ================================================================
    Auth — sign in / sign up modal + account menu
    ================================================================ */
 .auth-shell {

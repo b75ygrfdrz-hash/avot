@@ -133,6 +133,19 @@ create policy kids_owner on public.kids_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- =========================================================================
+-- Kids V2 state (single JSONB blob per user — matches src/lib/kidsV2.js)
+-- =========================================================================
+create table if not exists public.kidsv2_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  state jsonb not null default '{}',
+  updated_at timestamptz default now()
+);
+alter table public.kidsv2_state enable row level security;
+drop policy if exists kidsv2_owner on public.kidsv2_state;
+create policy kidsv2_owner on public.kidsv2_state
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- =========================================================================
 -- Convenience: who-am-I view (lets the client fetch role + profile in one go)
 -- =========================================================================
 create or replace view public.me as

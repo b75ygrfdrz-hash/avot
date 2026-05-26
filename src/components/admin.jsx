@@ -9,7 +9,9 @@ import {
   getHiddenCommentators,
   setCommentatorHidden,
   onCommentatorsChange,
+  checkAdminRole,
 } from '../lib/admin.js';
+import { useAuth } from '../lib/useAuth.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -77,8 +79,28 @@ const VisibilityPanel = () => {
 
 const AdminPanel = ({ onClose, data }) => {
   const [authed, setAuthed] = useState_a(isAdminAuthed());
+  const [checkingRole, setCheckingRole] = useState_a(!isAdminAuthed());
   const [section, setSection] = useState_a('visibility');
   const [editingMishnah, setEditingMishnah] = useState_a(null);
+  const { user } = useAuth();
+
+  // If not already locally authed, check if the signed-in Supabase user
+  // has admin role — if so, bypass the password screen entirely.
+  useEffect_a(() => {
+    if (authed) { setCheckingRole(false); return; }
+    checkAdminRole(user?.id).then(isAdmin => {
+      if (isAdmin) { setAdminAuthed(true); setAuthed(true); }
+      setCheckingRole(false);
+    });
+  }, [user?.id, authed]);
+
+  if (checkingRole) {
+    return (
+      <div className="admin-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 14 }}>
+        Checking credentials…
+      </div>
+    );
+  }
 
   if (!authed) {
     return <AdminLogin onAuth={() => setAuthed(true)} onClose={onClose} />;
