@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { Mascot, MASCOT_META } from './kidsV2Mascots.jsx';
+import { Splash } from './Splash.jsx';
 import {
   loadState,
   saveState,
@@ -16,12 +17,14 @@ import {
   awardZuzim,
   refillOneHeart,
   refillAllHearts,
+  setAvatar,
   HEART_FULL,
   ZUZIM_PER_LESSON,
   ZUZIM_PERFECT_BONUS,
   ZUZIM_HEART_COST,
   ZUZIM_FULL_COST,
 } from '../lib/kidsV2.js';
+import { logXpEvent, fetchLeaderboard, isConfigured } from '../lib/supabase.js';
 import { getLesson } from '../data/kidsV2Lessons.js';
 import {
   playCorrect,
@@ -37,6 +40,8 @@ import {
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
+
+const ANIMAL_EMOJI = { ari: '🦁', namer: '🐆', nesher: '🦅', tzvi: '🦌' };
 
 // ============================================================
 // useKidsState — reactive state hook with tick
@@ -79,14 +84,18 @@ const ZuzimCoin = ({ size = 18 }) => (
 // ============================================================
 // HUD — header strip with streak, hearts, XP, mute toggle
 // ============================================================
-const Hud = ({ state, onClose, onShowStreak }) => {
+const Hud = ({ state, onClose, onShowStreak, onShowLeaderboard }) => {
   const heartsArr = Array.from({ length: HEART_FULL }, (_, i) => i < state.hearts);
   const [muted, setMutedS] = useS(isMuted());
   useE(() => onMuteChange(() => setMutedS(isMuted())), []);
+  const avatarEmoji = state.avatar ? ANIMAL_EMOJI[state.avatar] : null;
   return (
     <div className="kv2-hud">
-      <button className="kv2-hud-close" onClick={onClose} aria-label="Exit Kids mode">
-        <Icon name="close" size={16} />
+      <button className="kv2-hud-close kv2-hud-switch" onClick={onClose} aria-label="Switch to Adult Mode">
+        {avatarEmoji
+          ? <span className="kv2-hud-avatar" aria-hidden="true">{avatarEmoji}</span>
+          : <Icon name="close" size={14} />}
+        <span className="kv2-hud-switch-label">Adult</span>
       </button>
       <button className="kv2-hud-item kv2-streak kv2-hud-btn" title="Streak calendar" onClick={onShowStreak}>
         <span className="kv2-streak-icon" aria-hidden="true">🔥</span>
@@ -105,16 +114,15 @@ const Hud = ({ state, onClose, onShowStreak }) => {
         <ZuzimCoin size={16} />
         <span className="kv2-zuzim-num">{state.zuzim || 0}</span>
       </div>
+      <button className="kv2-hud-trophy" title="Weekly leaderboard" onClick={onShowLeaderboard} aria-label="Leaderboard">
+        🏆
+      </button>
       <button
         className="kv2-hud-mute"
         onClick={() => {
           const next = !muted;
           setMuted(next);
-          // When turning sound ON, play a quick test tone so the user
-          // can immediately confirm audio is working.
-          if (!next) {
-            setTimeout(() => playTestTone(), 60);
-          }
+          if (!next) setTimeout(() => playTestTone(), 60);
         }}
         aria-label={muted ? 'Unmute' : 'Mute'}
         title={muted ? 'Unmute (and play test tone)' : 'Mute'}
@@ -207,23 +215,41 @@ const DailyGoal = ({ state }) => {
 // ============================================================
 // Section header — divides the path into perakim (levels)
 // ============================================================
-const PEREK_NAMES_EN = ['', 'Perek 1', 'Perek 2', 'Perek 3', 'Perek 4', 'Perek 5', 'Perek 6'];
+const PEREK_NAMES_EN = ['', 'Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5', 'Chapter 6'];
 const PEREK_NAMES_HE = ['', 'פֶּרֶק א׳', 'פֶּרֶק ב׳', 'פֶּרֶק ג׳', 'פֶּרֶק ד׳', 'פֶּרֶק ה׳', 'פֶּרֶק ו׳'];
 const PEREK_THEMES = ['', 'The Chain of Tradition', 'The World Stands on Three', 'Where We Come From', 'Be a Disciple', 'Tens and Sevens', 'The Acquisition of Torah'];
+// Warm, Torah-inspired palette — one hue per chapter
+const PEREK_COLORS = ['', '#e07b39', '#3d85c8', '#8b5cf6', '#059669', '#dc2626', '#b45309'];
+const PEREK_DARK   = ['', '#b85e22', '#2c66a0', '#6d3ed6', '#037550', '#b01c1c', '#8a3e04'];
+const PEREK_ICON   = ['', '📜', '🏛️', '🌿', '🧑‍🏫', '✡️', '📖'];
 
-const SectionHeader = ({ perek, done, locked }) => (
-  <div className={`kv2-section ${done ? 'done' : ''} ${locked ? 'locked' : ''}`}>
-    <div className="kv2-section-line" />
-    <div className="kv2-section-pill">
-      <div className="kv2-section-name">{PEREK_NAMES_EN[perek] || `Perek ${perek}`}</div>
-      <div className="kv2-section-he" style={{ fontFamily: 'var(--hebrew)' }}>{PEREK_NAMES_HE[perek]}</div>
-      <div className="kv2-section-theme">{PEREK_THEMES[perek] || ''}</div>
-      {done && <div className="kv2-section-badge">✓ Complete</div>}
-      {locked && <div className="kv2-section-badge locked">🔒 Locked</div>}
+const SectionHeader = ({ perek, done, locked }) => {
+  const color = PEREK_COLORS[perek] || '#e07b39';
+  const dark  = PEREK_DARK[perek]   || '#b85e22';
+  const icon  = PEREK_ICON[perek]   || '📜';
+  return (
+    <div className="kv2-section-banner-wrap">
+      <div
+        className={`kv2-section-banner ${done ? 'done' : ''} ${locked ? 'locked' : ''}`}
+        style={{ '--bc': color, '--bd': dark }}
+      >
+        <div className="kv2-section-banner-body">
+          <div className="kv2-section-banner-eye">
+            {done ? '✓ Complete' : locked ? '🔒 Locked' : `Section ${perek}`}
+          </div>
+          <div className="kv2-section-banner-title">
+            <span className="kv2-section-banner-icon" aria-hidden="true">{icon}</span>
+            {PEREK_NAMES_EN[perek] || `Chapter ${perek}`}
+          </div>
+          <div className="kv2-section-banner-theme">{PEREK_THEMES[perek] || ''}</div>
+        </div>
+        <div className="kv2-section-banner-he" dir="rtl" style={{ fontFamily: 'var(--hebrew)' }}>
+          {PEREK_NAMES_HE[perek]}
+        </div>
+      </div>
     </div>
-    <div className="kv2-section-line" />
-  </div>
-);
+  );
+};
 
 // ============================================================
 // Path — skill-tree of stops, grouped by perek
@@ -260,11 +286,19 @@ const Path = ({ stops, state, onPick }) => {
             {group.stops.map((stop, si) => {
               stopRelIdx++;
               const done = !!state.completed[stop.key];
+              const starsEarned = done ? (state.completed[stop.key]?.stars || 1) : 0;
               const absIdx = stops.findIndex(s => s.key === stop.key);
               const isCurrent = absIdx === currentIdx;
               const isLocked = (!stop.hasLesson && !done) || groupLocked;
               const meta = MASCOT_META[stop.animal];
-              const offset = [0, 50, 80, 50, 0, -50, -80, -50][stopRelIdx % 8];
+              // Zigzag offsets: 8-point wave pattern
+              const offset = [0, 48, 76, 48, 0, -48, -76, -48][stopRelIdx % 8];
+              // 3D coin shadow colour
+              const shadowCol = done
+                ? meta.color + 'cc'
+                : isCurrent
+                  ? meta.color + 'cc'
+                  : 'rgba(0,0,0,0.16)';
               return (
                 <div key={stop.key} className="kv2-stop-wrap" style={{ transform: `translateX(${offset}px)` }}>
                   <button
@@ -272,20 +306,41 @@ const Path = ({ stops, state, onPick }) => {
                     onClick={() => stop.hasLesson && !groupLocked && onPick(stop)}
                     disabled={isLocked}
                     style={{
-                      background: done ? meta.color : (isCurrent ? meta.color : '#e8e3dd'),
-                      boxShadow: isCurrent ? `0 6px 0 ${meta.color}aa, 0 8px 18px rgba(0,0,0,0.12)` : '0 4px 0 rgba(0,0,0,0.10)',
+                      background: done
+                        ? meta.color
+                        : isCurrent
+                          ? meta.color
+                          : isLocked
+                            ? '#c8c2bb'
+                            : '#ddd7cf',
+                      '--stop-shadow': shadowCol,
                     }}
-                    data-tip={groupLocked ? `Finish Perek ${group.perek - 1} first` : (isLocked ? 'Coming soon' : `Perek ${stop.perek} · Mishnah ${stop.mishnah}`)}
-                    data-tip-pos="top"
+                    aria-label={`${stop.perek}:${stop.mishnah}${done ? ` (${starsEarned} stars)` : isCurrent ? ' – start lesson' : ''}`}
                   >
                     {done ? (
                       <span className="kv2-stop-check">✓</span>
+                    ) : isLocked ? (
+                      <span className="kv2-stop-lock" aria-hidden="true">🔒</span>
                     ) : (
-                      <div className="kv2-stop-mascot"><Mascot which={stop.animal} size={isCurrent ? 64 : 54} /></div>
+                      <div className="kv2-stop-mascot">
+                        <Mascot which={stop.animal} size={isCurrent ? 60 : 50} />
+                      </div>
                     )}
                     {isCurrent && <span className="kv2-stop-pulse" />}
                   </button>
-                  <div className={`kv2-stop-label ${isLocked ? 'locked' : ''}`}>{stop.perek}:{stop.mishnah}</div>
+
+                  {/* Below-button label area */}
+                  {done ? (
+                    <div className="kv2-stop-stars" aria-hidden="true">
+                      {[1,2,3].map(n => (
+                        <span key={n} className={`kv2-stop-star-pip ${n <= starsEarned ? 'on' : 'off'}`}>★</span>
+                      ))}
+                    </div>
+                  ) : isCurrent ? (
+                    <div className="kv2-stop-start-label">START</div>
+                  ) : (
+                    <div className={`kv2-stop-label ${isLocked ? 'locked' : ''}`}>{stop.perek}:{stop.mishnah}</div>
+                  )}
                 </div>
               );
             })}
@@ -579,15 +634,29 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
   const words = mishnahData?.words || [];
   const attribution = mishnahData?.attribution;
 
+  const [speaking, setSpeaking] = useState(false);
+
+  const stopSpeak = () => {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    setSpeaking(false);
+  };
+
+  // Cancel on unmount
+  useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
+
   const speak = () => {
     try {
       if (!hebrew) return;
+      if (speaking) { stopSpeak(); return; }
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
+      u.onstart = () => setSpeaking(true);
+      u.onend   = () => setSpeaking(false);
+      u.onerror = () => setSpeaking(false);
       window.speechSynthesis.speak(u);
-    } catch (e) {}
+    } catch (e) { setSpeaking(false); }
   };
 
   return (
@@ -618,12 +687,18 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
             <div className="kv2-intro-card-head">
               <span className="kv2-intro-card-label">The Mishnah</span>
               {hebrew && (
-                <button className="kv2-intro-speak" onClick={speak} aria-label="Read aloud">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
-                    <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                  </svg>
-                  Listen
+                <button className={`kv2-intro-speak ${speaking ? 'speaking' : ''}`} onClick={speak} aria-label={speaking ? 'Stop' : 'Read aloud'}>
+                  {speaking ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="5" y="5" width="14" height="14" rx="2" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
+                      <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    </svg>
+                  )}
+                  {speaking ? 'Stop' : 'Listen'}
                 </button>
               )}
             </div>
@@ -657,13 +732,20 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
 // ============================================================
 const FeedbackBar = ({ feedback, onContinue }) => {
   if (!feedback) return null;
-  const { correct, correctText } = feedback;
+  const { correct, correctText, combo } = feedback;
+  const multiplier = combo >= 6 ? 3 : combo >= 3 ? 2 : 0;
   return (
     <div className={`kv2-feedback-bar ${correct ? 'correct' : 'wrong'}`}>
       <div className="kv2-fb-body">
         <div className="kv2-fb-label">
           {correct ? '🎉 Correct!' : '😬 Oops!'}
         </div>
+        {correct && multiplier >= 2 && (
+          <div className="kv2-fb-combo">
+            ⚡ Combo ×{multiplier}!
+            <span className="kv2-fb-combo-bonus">+{multiplier === 3 ? 10 : 5} bonus XP</span>
+          </div>
+        )}
         {!correct && correctText && (
           <div className="kv2-fb-answer">
             Correct answer: <strong style={{ fontFamily: correctText.match(/[֐-׿]/) ? 'var(--hebrew)' : 'inherit' }}>{correctText}</strong>
@@ -684,8 +766,12 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   const [phase, setPhase] = useS('intro'); // 'intro' | 'quiz'
   const [idx, setIdx] = useS(0);
   const correctRef = useR(0);
+  const comboRef   = useR(0);          // consecutive correct streak
+  const bonusXpRef = useR(0);          // total bonus XP from combos this lesson
+  const [combo, setCombo] = useS(0);
+  const [mascotMood, setMascotMood] = useS('idle');
   const [heartLost, setHeartLost] = useS(false);
-  const [feedback, setFeedback] = useS(null); // { correct, correctText }
+  const [feedback, setFeedback] = useS(null); // { correct, correctText, combo }
   const state = useKidsState();
 
   const exercise = lesson.exercises[idx];
@@ -694,27 +780,42 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
   function handleAnswer(correct, correctText = '') {
     if (correct) {
       correctRef.current += 1;
+      comboRef.current += 1;
+      const newCombo = comboRef.current;
+      setCombo(newCombo);
       playCorrect();
+      // Bonus XP when a threshold is first crossed
+      if (newCombo === 3) { awardXp(5);  bonusXpRef.current += 5; }
+      if (newCombo === 6) { awardXp(10); bonusXpRef.current += 10; }
+      setMascotMood(newCombo >= 6 ? 'combo' : newCombo >= 3 ? 'combo' : 'correct');
+      setFeedback({ correct, correctText, combo: newCombo });
     } else {
+      comboRef.current = 0;
+      setCombo(0);
       loseHeart();
       setHeartLost(true);
       playWrong();
       playHeartLost();
       setTimeout(() => setHeartLost(false), 600);
+      setMascotMood('wrong');
+      setFeedback({ correct, correctText, combo: 0 });
     }
-    setFeedback({ correct, correctText });
   }
 
   function advanceLesson() {
     setFeedback(null);
+    setMascotMood('idle');
     if (idx + 1 >= total) {
       const xpPerCorrect = 5;
       const xpEarned = correctRef.current * xpPerCorrect;
       const accuracy = correctRef.current / total;
       const stars = accuracy >= 0.95 ? 3 : accuracy >= 0.75 ? 2 : 1;
-      if (xpEarned > 0) awardXp(xpEarned);
+      if (xpEarned > 0) {
+        awardXp(xpEarned);
+        // Log to leaderboard (no-op if not signed in / not configured)
+        logXpEvent(xpEarned + bonusXpRef.current).catch(() => {});
+      }
       markCompleted(stop.key, stars, xpEarned);
-      // Award Zuzim: base per lesson + bonus for a perfect/3-star run
       const zuzimEarned = ZUZIM_PER_LESSON + (stars === 3 ? ZUZIM_PERFECT_BONUS : 0);
       awardZuzim(zuzimEarned);
       playLessonComplete();
@@ -739,15 +840,26 @@ const Lesson = ({ stop, lesson, onExit, onComplete }) => {
         <div className="kv2-progress">
           <div className="kv2-progress-fill" style={{ width: ((idx / total) * 100) + '%' }} />
         </div>
+        {combo >= 2 && (
+          <div className="kv2-combo-pill" aria-label={`Combo ${combo}`}>
+            ⚡ {combo}
+          </div>
+        )}
         <div className="kv2-lesson-hearts">
           <span>♥</span>
           <span>{state.hearts}</span>
         </div>
       </div>
-      {exercise.kind === 'match' && <ExMatch key={idx} exercise={exercise} onAnswer={handleAnswer} />}
+      {exercise.kind === 'match'  && <ExMatch  key={idx} exercise={exercise} onAnswer={handleAnswer} />}
       {exercise.kind === 'listen' && <ExListen key={idx} exercise={exercise} onAnswer={handleAnswer} />}
-      {exercise.kind === 'order' && <ExOrder key={idx} exercise={exercise} onAnswer={handleAnswer} />}
+      {exercise.kind === 'order'  && <ExOrder  key={idx} exercise={exercise} onAnswer={handleAnswer} />}
       {exercise.kind === 'choose' && <ExChoose key={idx} exercise={exercise} onAnswer={handleAnswer} />}
+      {/* Mascot reaction floats above feedback bar */}
+      {feedback && (
+        <div className="kv2-lesson-mascot" aria-hidden="true">
+          <Mascot which={stop.animal} size={64} mood={mascotMood} />
+        </div>
+      )}
       <FeedbackBar feedback={feedback} onContinue={advanceLesson} />
     </div>
   );
@@ -911,37 +1023,188 @@ const LessonStub = ({ stop, onClose }) => {
 };
 
 // ============================================================
+// AvatarPicker — choose your animal on first launch
+// ============================================================
+const AVATAR_ORDER = ['ari', 'namer', 'nesher', 'tzvi'];
+
+const AvatarPicker = ({ onPick }) => {
+  const [picked, setPicked] = useS(null);
+  return (
+    <div className="kv2-avatar-picker">
+      <div className="kv2-ap-inner">
+        <div className="kv2-ap-top">
+          <div className="kv2-ap-eyebrow">Pirkei Avot 5:23</div>
+          <h1 className="kv2-ap-title">Choose your animal!</h1>
+          <p className="kv2-ap-sub">Which animal will you be on your learning journey?</p>
+        </div>
+        <div className="kv2-ap-grid">
+          {AVATAR_ORDER.map(a => {
+            const m = MASCOT_META[a];
+            const isSelected = picked === a;
+            return (
+              <button
+                key={a}
+                className={`kv2-ap-card ${isSelected ? 'selected' : ''}`}
+                style={{ '--ap-accent': m.color, '--ap-bg': m.bg }}
+                onClick={() => setPicked(a)}
+                aria-pressed={isSelected}
+              >
+                <span className="kv2-ap-emoji" aria-hidden="true">{ANIMAL_EMOJI[a]}</span>
+                <div className="kv2-ap-name">{m.name}</div>
+                <div className="kv2-ap-he" dir="rtl">{m.he}</div>
+                <div className="kv2-ap-trait" style={{ color: m.color }}>{m.trait}</div>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          className="kv2-btn kv2-btn-lg kv2-ap-go"
+          disabled={!picked}
+          onClick={() => { if (picked) { setAvatar(picked); onPick(picked); } }}
+        >
+          Let's go! →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// Leaderboard — weekly XP top 50
+// ============================================================
+const Leaderboard = ({ onClose }) => {
+  const [rows, setRows] = useS([]);
+  const [loading, setLoading] = useS(true);
+
+  useE(() => {
+    fetchLeaderboard().then(({ data }) => {
+      setRows(data || []);
+      setLoading(false);
+    });
+  }, []);
+
+  const MEDAL = ['🥇', '🥈', '🥉'];
+  const podium = rows.slice(0, 3);
+  const rest   = rows.slice(3);
+
+  return (
+    <div className="kv2-lb-overlay" onClick={onClose}>
+      <div className="kv2-lb-card" onClick={e => e.stopPropagation()}>
+        <button className="kv2-lb-close" onClick={onClose} aria-label="Close">
+          <Icon name="close" size={14} />
+        </button>
+        <h2 className="kv2-lb-title">🏆 Weekly Leaders</h2>
+        <p className="kv2-lb-sub">XP earned in the last 7 days · resets every Sunday</p>
+
+        {loading && <div className="kv2-lb-loading">Loading…</div>}
+
+        {!loading && !isConfigured && (
+          <div className="kv2-lb-empty">
+            <div style={{ fontSize: 40 }}>🔒</div>
+            <p>Sign in to appear on the leaderboard and compete with others!</p>
+          </div>
+        )}
+
+        {!loading && isConfigured && rows.length === 0 && (
+          <div className="kv2-lb-empty">
+            <div style={{ fontSize: 40 }}>🌟</div>
+            <p>No scores yet this week. Complete a lesson to be first!</p>
+          </div>
+        )}
+
+        {!loading && rows.length > 0 && (
+          <>
+            <div className="kv2-lb-podium">
+              {/* Podium order: 2nd (left), 1st (centre), 3rd (right) */}
+              {[1, 0, 2].filter(i => podium[i]).map((ri, pi) => {
+                const r = podium[ri];
+                const heights = ['70px', '90px', '55px'];
+                return (
+                  <div key={r.user_id} className={`kv2-lb-place kv2-lb-p${ri + 1}`}>
+                    <div className="kv2-lb-place-medal">{MEDAL[ri]}</div>
+                    <div className="kv2-lb-place-avatar">{ANIMAL_EMOJI[r.avatar] || '📖'}</div>
+                    <div className="kv2-lb-place-name">{r.display_name}</div>
+                    <div
+                      className="kv2-lb-place-block"
+                      style={{ height: heights[pi] }}
+                    >
+                      <span className="kv2-lb-place-xp">{r.weekly_xp} XP</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {rest.length > 0 && (
+              <div className="kv2-lb-list">
+                {rest.map((r, i) => (
+                  <div key={r.user_id} className="kv2-lb-row">
+                    <span className="kv2-lb-row-rank">#{i + 4}</span>
+                    <span className="kv2-lb-row-avatar">{ANIMAL_EMOJI[r.avatar] || '📖'}</span>
+                    <span className="kv2-lb-row-name">{r.display_name}</span>
+                    <span className="kv2-lb-row-xp">{r.weekly_xp} XP</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
 // Home — path screen
 // ============================================================
 const KidsV2Home = ({ data, onOpenLesson, onClose }) => {
   const state = useKidsState();
   const stops = useMemo(() => buildPath(data.perakim), [data]);
   const [showStreak, setShowStreak] = useS(false);
+  const [showLeaderboard, setShowLeaderboard] = useS(false);
+  const avatarMeta = state.avatar ? MASCOT_META[state.avatar] : null;
   return (
     <div className="kv2-home">
-      <Hud state={state} onClose={onClose} onShowStreak={() => setShowStreak(true)} />
+      <Hud state={state} onClose={onClose} onShowStreak={() => setShowStreak(true)} onShowLeaderboard={() => setShowLeaderboard(true)} />
       {showStreak && <StreakCalendar state={state} onClose={() => setShowStreak(false)} />}
+      {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       <DailyGoal state={state} />
       <div className="kv2-hero">
-        <div className="kv2-hero-eyebrow">Pirkei Avot</div>
-        <h1 className="kv2-hero-title">Wisdom, one step at a time</h1>
+        <div className="kv2-hero-eyebrow">פִּרְקֵי אָבוֹת · Pirkei Avot</div>
+        {avatarMeta ? (
+          <h1 className="kv2-hero-title">
+            {ANIMAL_EMOJI[state.avatar]}
+            {' '}Be{' '}
+            <span style={{ color: avatarMeta.color }}>{avatarMeta.trait}</span>
+            {' '}like {/^[aeiou]/i.test(avatarMeta.name) ? 'an' : 'a'} {avatarMeta.name}!
+          </h1>
+        ) : (
+          <h1 className="kv2-hero-title">Wisdom, one step at a time</h1>
+        )}
         <div className="kv2-hero-sub">
-          Be bold as a <strong style={{ color: MASCOT_META.namer.color }}>leopard</strong>,
-          light as an <strong style={{ color: MASCOT_META.nesher.color }}>eagle</strong>,
-          swift as a <strong style={{ color: MASCOT_META.tzvi.color }}>deer</strong>,
-          and strong as a <strong style={{ color: MASCOT_META.ari.color }}>lion</strong>.
+          Ethics of the Fathers · 6 chapters · a lifetime of wisdom
         </div>
       </div>
       <Path stops={stops} state={state} onPick={onOpenLesson} />
+      <div className="kv2-mode-switch-footer">
+        <button className="kv2-mode-switch-btn" onClick={onClose}>
+          📖 Switch to Adult Mode
+        </button>
+      </div>
     </div>
   );
 };
 
 // ============================================================
+// Show the kids splash only once per browser session
+let _kidsSplashShown = false;
+
 // Top-level KidsMode
 // ============================================================
 const KidsMode = ({ perek, perakim, perekIdx, setPerekIdx, mishnah, mishnahIdx, setMishnahIdx, onColoring, onParentDash }) => {
   const data = { perakim };
+  const state = useKidsState();
+  const [showSplash, setShowSplash] = useS(() => !_kidsSplashShown);
   const [activeStop, setActiveStop] = useS(null);
   const [result, setResult] = useS(null);
   const [perekDoneFor, setPerekDoneFor] = useS(null); // perek number to celebrate
@@ -979,6 +1242,13 @@ const KidsMode = ({ perek, perakim, perekIdx, setPerekIdx, mishnah, mishnahIdx, 
     window.location.reload();
   }
 
+  if (showSplash) {
+    return <Splash onDone={() => { _kidsSplashShown = true; setShowSplash(false); }} />;
+  }
+  // Show avatar picker on first launch (before any content)
+  if (!state.avatar) {
+    return <AvatarPicker onPick={() => {}} />;
+  }
   if (perekDoneFor !== null) {
     const group = groups.find(g => g.perek === perekDoneFor);
     const freshState = loadState();
