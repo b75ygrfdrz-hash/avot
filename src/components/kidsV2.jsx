@@ -652,10 +652,10 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
-      u.onstart = () => setSpeaking(true);
       u.onend   = () => setSpeaking(false);
       u.onerror = () => setSpeaking(false);
       window.speechSynthesis.speak(u);
+      setSpeaking(true);
     } catch (e) { setSpeaking(false); }
   };
 
