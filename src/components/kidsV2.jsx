@@ -636,19 +636,18 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
 
   const [speaking, setSpeaking] = useState(false);
 
-  const stopSpeak = () => {
-    try { window.speechSynthesis.cancel(); } catch (e) {}
-    setSpeaking(false);
-  };
-
   // Cancel on unmount
   useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
 
   const speak = () => {
     try {
       if (!hebrew) return;
-      if (speaking) { stopSpeak(); return; }
-      window.speechSynthesis.cancel();
+      // Use the live browser property — more reliable than React state
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+        setSpeaking(false);
+        return;
+      }
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
