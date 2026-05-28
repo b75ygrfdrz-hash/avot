@@ -646,7 +646,10 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
   };
 
   const stopSpeak = () => {
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    try {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.cancel();
+    } catch (e) {}
   };
 
   useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
