@@ -636,26 +636,27 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
 
   const [speaking, setSpeaking] = useState(false);
 
-  // Cancel on unmount
-  useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
+  // Poll the browser's live state — immune to onend timing issues
+  useE(() => {
+    const id = setInterval(() => {
+      const live = !!(window.speechSynthesis?.speaking || window.speechSynthesis?.pending);
+      setSpeaking(s => s !== live ? live : s);
+    }, 150);
+    return () => { clearInterval(id); try { window.speechSynthesis.cancel(); } catch (e) {} };
+  }, []);
 
   const speak = () => {
     try {
       if (!hebrew) return;
-      // Use the live browser property — more reliable than React state
       if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
         window.speechSynthesis.cancel();
-        setSpeaking(false);
         return;
       }
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
-      u.onend   = () => setSpeaking(false);
-      u.onerror = () => setSpeaking(false);
       window.speechSynthesis.speak(u);
-      setSpeaking(true);
-    } catch (e) { setSpeaking(false); }
+    } catch (e) {}
   };
 
   return (
