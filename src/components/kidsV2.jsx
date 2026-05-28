@@ -634,30 +634,22 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
   const words = mishnahData?.words || [];
   const attribution = mishnahData?.attribution;
 
-  const [speaking, setSpeaking] = useState(false);
-
-  // Poll the browser's live state — immune to onend timing issues
-  useE(() => {
-    const id = setInterval(() => {
-      const live = !!(window.speechSynthesis?.speaking || window.speechSynthesis?.pending);
-      setSpeaking(s => s !== live ? live : s);
-    }, 150);
-    return () => { clearInterval(id); try { window.speechSynthesis.cancel(); } catch (e) {} };
-  }, []);
-
   const speak = () => {
     try {
       if (!hebrew) return;
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.cancel();
-        return;
-      }
+      window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
       window.speechSynthesis.speak(u);
     } catch (e) {}
   };
+
+  const stopSpeak = () => {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+  };
+
+  useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
 
   return (
     <div className="kv2-intro" style={{ background: meta.bg }}>
@@ -687,19 +679,21 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
             <div className="kv2-intro-card-head">
               <span className="kv2-intro-card-label">The Mishnah</span>
               {hebrew && (
-                <button className={`kv2-intro-speak ${speaking ? 'speaking' : ''}`} onClick={speak} aria-label={speaking ? 'Stop' : 'Read aloud'}>
-                  {speaking ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="5" y="5" width="14" height="14" rx="2" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="kv2-intro-speak" onClick={speak} aria-label="Read aloud">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                       <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
                       <path d="M16 8c1.5 1.5 1.5 6.5 0 8M19 5c3 3 3 11 0 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
                     </svg>
-                  )}
-                  {speaking ? 'Stop' : 'Listen'}
-                </button>
+                    Listen
+                  </button>
+                  <button className="kv2-intro-stop" onClick={stopSpeak} aria-label="Stop audio">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="5" y="5" width="14" height="14" rx="2" />
+                    </svg>
+                    Stop
+                  </button>
+                </div>
               )}
             </div>
             {hebrew && (

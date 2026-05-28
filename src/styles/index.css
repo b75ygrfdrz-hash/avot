@@ -11380,7 +11380,22 @@ img, svg, video { max-width: 100%; height: auto; }
   transition: transform 0.1s ease;
 }
 .kv2-intro-speak:active { transform: translateY(1px); border-bottom-width: 2px; }
-.kv2-intro-speak.speaking { background: #c0392b; border-bottom-color: #922b21; }
+.kv2-intro-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-bottom: 3px solid #922b21;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.kv2-intro-stop:active { transform: translateY(1px); border-bottom-width: 2px; }
 .kv2-intro-hebrew {
   font-size: 24px;
   line-height: 2.05;
