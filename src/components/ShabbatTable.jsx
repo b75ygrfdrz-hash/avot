@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Icon } from './Icon.jsx';
-import { DISCUSSION, SHABBAT_WEEKS } from '../data/discussion.js';
+import { DISCUSSION, BARTENURA, CHIEF_RABBI, SHABBAT_WEEKS } from '../data/discussion.js';
 import { downloadShabbatReminder, nextFriday } from '../lib/calendar.js';
 import { submitDigestSignup } from '../lib/digest.js';
 
@@ -106,41 +106,61 @@ const ShabbatTable = ({ data, onClose, onJump }) => {
             <div className="shabbat-sheet-theme-blurb">{week.blurb}</div>
           </div>
 
-          <p className="shabbat-intro">
-            Chief Rabbi Warren Goldstein founded The Shabbat Project, which has
-            brought communities across the world to keep Shabbat together.
-            Pirkei Avot has long been the learning of Shabbat afternoon. Read
-            these mishnayot aloud at your table, and let the questions beneath
-            each one carry the conversation.
-          </p>
+          <div className="shabbat-mishnah-grid">
+          {items.map(it => {
+            const key = `${it.p}.${it.m}`;
+            const bartenura = BARTENURA[key];
+            const chiefRabbi = CHIEF_RABBI[key];
+            return (
+              <section className="shabbat-mishnah" key={key}>
+                <div className="shabbat-mishnah-head">
+                  <button
+                    className="shabbat-ref"
+                    onClick={() => onJump && onJump(it.p, it.m)}
+                    title="Open in the reader"
+                  >
+                    Avot {it.p}:{it.m}
+                  </button>
+                  <div className="shabbat-attr">
+                    <span className="shabbat-attr-he">{it.mishnah.attribution.he}</span>
+                    <span className="shabbat-attr-en">{it.mishnah.attribution.en}</span>
+                  </div>
+                </div>
 
-          {items.map(it => (
-            <section className="shabbat-mishnah" key={`${it.p}.${it.m}`}>
-              <div className="shabbat-mishnah-head">
-                <button
-                  className="shabbat-ref"
-                  onClick={() => onJump && onJump(it.p, it.m)}
-                  title="Open in the reader"
-                >
-                  Avot {it.p}:{it.m}
-                </button>
-                <div className="shabbat-attr">
-                  <span className="shabbat-attr-he">{it.mishnah.attribution.he}</span>
-                  <span className="shabbat-attr-en">{it.mishnah.attribution.en}</span>
-                </div>
-              </div>
-              <div className="shabbat-he" dir="rtl">{it.mishnah.hebrew}</div>
-              <div className="shabbat-en">{it.mishnah.english}</div>
-              {it.questions.length > 0 && (
-                <div className="shabbat-questions">
-                  <div className="shabbat-questions-label">At the table</div>
-                  <ol className="shabbat-questions-list">
-                    {it.questions.map((q, qi) => <li key={qi}>{q}</li>)}
-                  </ol>
-                </div>
-              )}
-            </section>
-          ))}
+                <div className="shabbat-he" dir="rtl">{it.mishnah.hebrew}</div>
+                <div className="shabbat-en">{it.mishnah.english}</div>
+
+                {bartenura && (
+                  <div className="shabbat-bartenura">
+                    <div className="shabbat-bartenura-label">
+                      <span className="shabbat-bartenura-icon" aria-hidden="true">📜</span>
+                      Bartenura
+                    </div>
+                    <p className="shabbat-bartenura-text">{bartenura}</p>
+                  </div>
+                )}
+
+                {chiefRabbi && (
+                  <div className="shabbat-chief-rabbi">
+                    <div className="shabbat-chief-rabbi-label">
+                      Chief Rabbi Goldstein
+                    </div>
+                    <p className="shabbat-chief-rabbi-text">{chiefRabbi}</p>
+                  </div>
+                )}
+
+                {it.questions.length > 0 && (
+                  <div className="shabbat-questions">
+                    <div className="shabbat-questions-label">At the table</div>
+                    <ol className="shabbat-questions-list">
+                      {it.questions.map((q, qi) => <li key={qi}>{q}</li>)}
+                    </ol>
+                  </div>
+                )}
+              </section>
+            );
+          })}
+          </div>
 
           <footer className="shabbat-sheet-foot">
             <span>Avot · The Shabbat Table</span>

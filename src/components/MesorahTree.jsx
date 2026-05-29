@@ -228,9 +228,7 @@ const MesorahTree = ({ onClose, onJump, focusId }) => {
 
   const pickNode = (id) => { if (!moved.current) setSelectedId(prev => prev === id ? null : id); };
 
-  const selected  = selectedId ? byId[selectedId] : null;
-  const taughtBy  = selected ? selected.receivedFrom.map(id => byId[id]).filter(Boolean) : [];
-  const students  = selected ? MESORAH_CHAIN.filter(n => n.receivedFrom.includes(selected.id)) : [];
+  const selected    = selectedId ? byId[selectedId] : null;
   const selectedEra = selected ? getEra(selected.generation) : null;
 
   // Role-based node colours — Nasi gets gold, Av Beit Din gets indigo, others use era colour.
@@ -406,32 +404,6 @@ const MesorahTree = ({ onClose, onJump, focusId }) => {
             {hasPath && pathIds.size > 1 && (
               <div className="mtree-detail-path-note">
                 ✦ Path from Sinai highlighted
-              </div>
-            )}
-
-            {taughtBy.length > 0 && (
-              <div className="mtree-detail-block">
-                <div className="mtree-detail-label">Received from</div>
-                <div className="mtree-detail-links">
-                  {taughtBy.map(t => (
-                    <button key={t.id} className="mtree-link" onClick={() => setSelectedId(t.id)}>
-                      {t.nameEn}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {students.length > 0 && (
-              <div className="mtree-detail-block">
-                <div className="mtree-detail-label">Transmitted to</div>
-                <div className="mtree-detail-links">
-                  {students.map(s => (
-                    <button key={s.id} className="mtree-link" onClick={() => setSelectedId(s.id)}>
-                      {s.nameEn}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
 

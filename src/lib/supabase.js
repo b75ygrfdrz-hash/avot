@@ -185,9 +185,37 @@ export async function getProfile(userId) {
   try {
     const { data } = await supabase
       .from('profiles')
-      .select('role, display_name, email')
+      .select('role, display_name, email, avatar')
       .eq('id', userId)
       .maybeSingle();
     return data || null;
   } catch (e) { return null; }
+}
+
+// Update the avatar field on a user's profile.
+export async function updateProfileAvatar(userId, avatar) {
+  if (!supabase) return;
+  try {
+    await supabase.from('profiles').update({ avatar }).eq('id', userId);
+  } catch (e) {}
+}
+
+// Log XP earned in a lesson (for the weekly leaderboard).
+// No-op when the user is not signed in or Supabase is not configured.
+export async function logXpEvent(xp) {
+  if (!supabase || !xp || xp <= 0) return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('xp_events').insert({ user_id: user.id, xp });
+  } catch (e) {}
+}
+
+// Fetch the weekly leaderboard (top 50 by XP in the last 7 days).
+export async function fetchLeaderboard() {
+  if (!supabase) return { data: [], error: null };
+  try {
+    const { data, error } = await supabase.rpc('get_weekly_leaderboard');
+    return { data: data || [], error };
+  } catch (e) { return { data: [], error: e }; }
 }

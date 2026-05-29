@@ -29,6 +29,7 @@ const DEFAULT_STATE = {
   dailyDate: null, // YYYY-MM-DD this day's XP counter applies to
   dailyGoal: 30,
   zuzim: 0,       // spendable coin balance
+  avatar: null,   // chosen animal: 'ari' | 'namer' | 'nesher' | 'tzvi'
 };
 
 function todayStr() {
@@ -254,6 +255,12 @@ export function refillAllHearts() {
   s.zuzim -= ZUZIM_FULL_COST;
   saveState(s);
   return true;
+}
+
+// Set the player's chosen avatar animal.
+export function setAvatar(animal) {
+  const s = loadState();
+  saveState({ ...s, avatar: animal });
 }
 
 export { HEART_FULL, HEART_REFILL_MS, todayStr, ZUZIM_PER_LESSON, ZUZIM_PERFECT_BONUS, ZUZIM_HEART_COST, ZUZIM_FULL_COST };

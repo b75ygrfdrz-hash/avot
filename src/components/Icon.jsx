@@ -55,6 +55,7 @@ const Icon = ({ name, size = 16 }) => {
     mail: <><rect x="2.5" y="4.5" width="15" height="11" rx="1.6" /><path d="M3 6 L10 11 L17 6" /></>,
     edit: <><path d="M3 14 L3 17 L6 17 L15 8 L12 5 L3 14 Z" /><line x1="12" y1="5" x2="15" y2="8" /></>,
     trash: <><polyline points="3 5 17 5" /><path d="M5 5 L6 17 L14 17 L15 5" /><line x1="8" y1="3" x2="12" y2="3" /><line x1="8" y1="8" x2="8" y2="14" /><line x1="12" y1="8" x2="12" y2="14" /></>,
+    flame: <path d="M10 2 C8 5 6 6 7 9 C5 8 5 6 6 4 C3 7 3 11 6 13 C6 15 8 16 10 16 C12 16 14 15 14 13 C17 11 17 7 14 4 C15 6 13 8 12 7 C13 4 11 3 10 2 Z M9 12 C9 13.5 10 14 10.5 14 C11 14 12 13 11.5 11.5 C11 10 12 9 12 9 C10.5 10 9 10.5 9 12 Z" />,
   };
   return (
     <svg viewBox="0 0 20 20" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

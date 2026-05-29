@@ -149,6 +149,65 @@ create policy kidsv2_owner on public.kidsv2_state
 -- Convenience: who-am-I view (lets the client fetch role + profile in one go)
 -- =========================================================================
 create or replace view public.me as
-  select id, email, display_name, role
+  select id, email, display_name, role, avatar
   from public.profiles
   where id = auth.uid();
+
+-- =========================================================================
+-- Avatar column on profiles (kids animal avatar: ari | namer | nesher | tzvi)
+-- =========================================================================
+alter table public.profiles add column if not exists avatar text;
+
+-- =========================================================================
+-- XP events — one row per lesson completed, used for the weekly leaderboard
+-- =========================================================================
+create table if not exists public.xp_events (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  xp         integer not null check (xp > 0),
+  created_at timestamptz default now()
+);
+create index if not exists xp_events_user_time on public.xp_events(user_id, created_at desc);
+
+alter table public.xp_events enable row level security;
+
+-- Users can only insert and read their own events
+drop policy if exists xp_events_insert on public.xp_events;
+create policy xp_events_insert on public.xp_events
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists xp_events_select_own on public.xp_events;
+create policy xp_events_select_own on public.xp_events
+  for select using (auth.uid() = user_id);
+
+-- =========================================================================
+-- Weekly leaderboard RPC — top 50 users by XP in the last 7 days.
+-- security definer so it can aggregate across all users' events.
+-- =========================================================================
+create or replace function public.get_weekly_leaderboard()
+returns table(
+  user_id      uuid,
+  display_name text,
+  avatar       text,
+  weekly_xp    bigint,
+  rank         bigint
+)
+language sql security definer stable as $$
+  select
+    p.id as user_id,
+    coalesce(
+      nullif(p.display_name, ''),
+      split_part(p.email, '@', 1),
+      'Scholar'
+    ) as display_name,
+    p.avatar,
+    coalesce(sum(e.xp), 0)::bigint as weekly_xp,
+    rank() over (order by coalesce(sum(e.xp), 0) desc)::bigint as rank
+  from public.profiles p
+  left join public.xp_events e
+    on  e.user_id    = p.id
+    and e.created_at > now() - interval '7 days'
+  group by p.id, p.display_name, p.email, p.avatar
+  order by weekly_xp desc
+  limit 50;
+$$;

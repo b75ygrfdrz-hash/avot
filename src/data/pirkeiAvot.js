@@ -65,9 +65,7 @@ window.PIRKEI_AVOT = {
             maharal: "שלשה דברים אלו הם שלשה עמודים: הדין הוא העולם המעשי, התלמידים הם העולם הרוחני המתפשט, וסייג לתורה הוא שמירת הקדושה. These three pillars correspond to action, transmission, and preservation — the full architecture of a living tradition.",
           },
           videos: [
-            { title: "The Chain of Mesorah — Opening Mishnah", teacher: "Rabbi Jonathan Sacks z\"l", duration: "14:22", source: "YouTube", url: "#", thumb: "warm" },
-            { title: "Why 'from Sinai' and not 'from Moshe'?", teacher: "Rabbi YY Jacobson", duration: "22:08", source: "TorahAnytime", url: "#", thumb: "cool" },
-            { title: "Three Pillars of the Great Assembly", teacher: "Rabbi David Fohrman", duration: "31:45", source: "Aleph Beta", url: "#", thumb: "earth" },
+            { title: "My Personal Journey | Avot with the Chief - Part 1", teacher: "Sinai Indaba", source: "YouTube", url: "https://www.youtube.com/watch?v=E8h9zZRdsXs", thumb: "warm" },
           ],
         },
         {
@@ -247,4 +245,173 @@ m3.crossRefs = [
   { source: "Sotah 22b", text: "Categories of 'pharisees' — including those who serve from love versus from fear.", type: "talmud" },
   { source: "Avot d'Rabbi Natan 5:2", text: "The tradition that Tzadok and Boethus misinterpreted Antignos's teaching, leading to the Sadducee and Boethusian sects.", type: "midrash" },
 ];
+
+// ============================================================
+// The Burning Question — one contested interpretive question per mishnah
+// ============================================================
+const _bq = window.PIRKEI_AVOT.perakim[0].mishnayot;
+
+_bq[0].burningQuestion = {
+  q: "Why does the Mishnah say Torah was received 'from Sinai' — not 'from God'?",
+  tension: "If Moshe received Torah from God at Sinai, why does the text seem to bypass the Divine entirely and anchor authority in a mountain?",
+  views: [
+    { who: "Rashi", says: "'From Sinai' — not from Moshe. Even Moshe was a recipient, not the source. The phrase proves that every link in the chain is bound by what was received before them, not by their own authority." },
+    { who: "Maharal", says: "Sinai is an eternal wellspring, not a historical moment. Each generation does not merely inherit Torah from the previous one — they draw from Sinai itself. The chain is a series of direct connections to the same source." },
+    { who: "Bartenura", says: "The wording validates the entire mesorah. To say 'from God' would privilege only the first link. 'From Sinai' makes every act of transmission — teacher to student, generation to generation — equally authoritative." },
+  ],
+};
+
+_bq[1].burningQuestion = {
+  q: "Are Torah, Avodah, and Chesed three equal pillars — or is one the root of the others?",
+  tension: "If they are truly equal, can deep strength in one compensate for weakness in another? If one is primary, which is it — and what happens to the others without it?",
+  views: [
+    { who: "Rambam", says: "Three distinct domains: perfection of self (Torah), relationship with the Creator (Avodah), relationship with others (Chesed). They cannot be traded off. A life missing any one is structurally incomplete." },
+    { who: "Maharal", says: "Torah is the root from which Avodah and Chesed naturally grow. Avodah without Torah is blind devotion; Chesed without Torah is undirected sentiment. The intellect must ground the heart and the hands." },
+  ],
+};
+
+_bq[2].burningQuestion = {
+  q: "Can a human being truly serve without any thought of reward — or is this ceiling one we can only approach?",
+  tension: "The Rambam says it is achievable; the Tiferet Yisrael reserves it for chasidim. If even the promise of olam haba motivates us, are we ever free from the transactional impulse?",
+  views: [
+    { who: "Rambam", says: "Service from love is the highest level AND it is fully attainable — through deliberate moral habituation. This is precisely why the Rambam devotes an entire chapter of Hilchot Teshuvah to it: it is a destination, not only an aspiration." },
+    { who: "Tiferet Yisrael", says: "This is a lofty level, appropriate for chasidim. An ordinary person who serves partly for reward is not condemned — provided the awe of Heaven grounds that service. Antignos added that closing line for exactly this reason." },
+    { who: "Maharal", says: "The controlling question is not whether reward enters your mind at all, but what controls your motivation. Love must be the master; reward may be the servant. 'Let the awe of Heaven be upon you' is the anchor that makes this possible for everyone." },
+  ],
+};
+
+_bq[3].burningQuestion = {
+  q: "Is 'let your house be a meeting place for the sages' practical hospitality — or a vision of what a home can become?",
+  tension: "Only the wealthy could actually host scholars. Was this teaching aimed at an elite, or does it carry a universal meaning that transcends physical space?",
+  views: [
+    { who: "Rambam", says: "The instruction is literal: open your home to Torah scholars. Their presence does not merely visit the household — it elevates and reshapes its character permanently." },
+    { who: "Maharal", says: "The home becomes a beit vaad not only by hosting sages but by living as they live. The transformation is interior. Even without physical guests, a household saturated in Torah becomes a place of meeting." },
+  ],
+};
+
+_bq[4].burningQuestion = {
+  q: "What is the difference between giving to the poor and making them 'members of your household'?",
+  tension: "Tzedakah can be given while maintaining dignified distance. This teaching collapses that distance entirely — and warns against 'excessive conversation' in the same breath. What is Yose actually demanding?",
+  views: [
+    { who: "Bartenura", says: "Gemilut chasadim with one's body exceeds tzedakah with money. To make someone a household member is to give yourself — your time, your space, your presence — not merely your resources." },
+    { who: "Maharal", says: "True chesed is not a transfer of resources but a restoration of status. When the poor person becomes part of your household, the very hierarchy that made them 'poor' in your eyes is dissolved. That dissolving is the act of chesed." },
+  ],
+};
+
+_bq[5].burningQuestion = {
+  q: "Why does the Mishnah say 'acquire' (קנה) a friend — a word that also means purchase? Is deep friendship a transaction?",
+  tension: "Natural friendship is freely given. Torah friendship demands investment and active pursuit. Does the economic language elevate friendship — or reduce it?",
+  views: [
+    { who: "Bartenura", says: "A chavruta who tells you your faults is not naturally stumbled upon — they must be sought and secured. The 'acquisition' is the commitment to a truth-telling relationship over a comfortable one." },
+    { who: "Maharal", says: "To acquire implies ongoing accountability. You are not just in a relationship — you become responsible for this person's growth as they are responsible for yours. That mutual accountability is the purchase price." },
+  ],
+};
+
+_bq[6].burningQuestion = {
+  q: "Does 'do not befriend the wicked' prohibit outreach — or only the intimacy that makes you vulnerable to influence?",
+  tension: "If we cannot be near the wicked, how do we fulfill the mandate to help them return? Does keeping distance justify abandonment?",
+  views: [
+    { who: "Rambam", says: "The prohibition targets absorption of the wicked person's ways, not proximity to them. You may seek to influence; you may not risk being influenced. The distinction is in your own level of spiritual stability." },
+    { who: "Maharal", says: "Environment reshapes character gradually and invisibly. Even the sage who intends to influence may find themselves reshaped instead. Nitai's warning is not about others — it is about honest self-assessment." },
+  ],
+};
+
+_bq[7].burningQuestion = {
+  q: "Can a judge who witnessed an event also rule on it — and what does Yehudah ben Tabbai's public retraction tell us?",
+  tension: "Yehudah ben Tabbai reportedly erred on this very question and spent his life repenting for it. Does a sage's recorded mistake in the Mishnah undercut the tradition's authority — or, paradoxically, strengthen it?",
+  views: [
+    { who: "Rambam", says: "A judge with prior knowledge of an event is compromised. Impartiality is the architecture of justice, not just its goal. The system must be protected even from judges with good intentions and accurate memories." },
+    { who: "Maharal", says: "The fact that Yehudah ben Tabbai publicly repented for the rest of his life IS the teaching. The great sages make mistakes; their greatness lies in the courage and persistence of correction." },
+  ],
+};
+
+_bq[8].burningQuestion = {
+  q: "When does rigorous cross-examination become harassment that deters honest witnesses from coming forward?",
+  tension: "The Torah mandates exhaustive questioning to protect the innocent accused. But a frightened witness may stay silent — and the guilty go free. Which value wins when they collide?",
+  views: [
+    { who: "Rambam", says: "The structured system of seven examination categories (bedikot and chakirot) is not harassment — it is protection. Questions follow rules, and the goal is precision, not intimidation. Form and justice are the same thing here." },
+    { who: "Maharal", says: "The goal of cross-examination is truth, not procedure. When formalism begins to obstruct the truth it was designed to protect, the procedure has already betrayed its own purpose." },
+  ],
+};
+
+_bq[9].burningQuestion = {
+  q: "If the best people avoid positions of authority, who actually ends up leading?",
+  tension: "Shemaiah says: hate rabbanut. But every generation needs leaders. Does this teaching inadvertently create a vacuum that attracts exactly the wrong people?",
+  views: [
+    { who: "Rambam", says: "Legitimate leadership is conferred only on those who do not seek it. The sage appointed despite reluctance is the only kind who can be trusted with power — because power has not yet shaped their thinking." },
+    { who: "Maharal", says: "Those who crave authority are already shaped by it before they hold it. Only those who actively resist it retain the moral clarity to exercise it justly. The vacuum is filled by appointment, not ambition." },
+  ],
+};
+
+_bq[10].burningQuestion = {
+  q: "How can a sage's careful, well-intentioned words lead students to 'drink from bad waters' — waters that lead to death?",
+  tension: "Avtalyon warns of exile even for righteous sages who speak imprecisely. Is this an impossible standard — or does Torah speech carry a unique weight that demands it?",
+  views: [
+    { who: "Bartenura", says: "A scholar who teaches imprecisely during a period of ideological pressure can cause students to misunderstand and embrace heresy — without ever intending it. Words are not neutral vessels; they carry the speaker's authority." },
+    { who: "Maharal", says: "Words from the wise carry disproportionate weight. A small error from an ordinary person stays local; from a sage, it spreads, takes root, and multiplies across generations. The standard is not impossible — it is proportional." },
+  ],
+};
+
+_bq[11].burningQuestion = {
+  q: "Does Hillel's 'love people and draw them close to Torah' mean love is the strategy — or that love comes first, regardless of outcome?",
+  tension: "If love is the means to bring people to Torah, it is ultimately conditional. If love is unconditional, what do you do with the person who permanently refuses Torah? Do you keep loving them?",
+  views: [
+    { who: "Rambam", says: "Aharon's model was genuine love, not instrumental. He loved first and Torah followed naturally. The sequence matters: love is not the hook; it is the gift. Torah may or may not follow, but the love does not depend on it." },
+    { who: "Maharal", says: "You cannot draw anyone toward Torah without first loving them authentically. But real love also desires their ultimate good — and their ultimate good is Torah. The apparent tension dissolves: love that seeks the best for the beloved is the very love that brings them close." },
+  ],
+};
+
+_bq[12].burningQuestion = {
+  q: "If one who magnifies their name destroys it, why is Hillel himself the most famous sage in the entire Mishnah?",
+  tension: "Did Hillel's extraordinary fame come from seeking it or from avoiding it? And is this mishnah, which made him even more famous, self-refuting?",
+  views: [
+    { who: "Maharal", says: "True greatness is effortless and unsought. Those who labor to be remembered are remembered for the wrong thing — or forgotten entirely. Hillel became famous precisely because he was never chasing it." },
+    { who: "Bartenura", says: "The one who uses Torah as an instrument for building personal reputation turns Torah into a tool. Ultimately, the tool destroys the one who misuses it. The name they sought to magnify collapses under the weight of its own ambition." },
+  ],
+};
+
+_bq[13].burningQuestion = {
+  q: "Are Hillel's three questions one integrated argument, three separate teachings, or a paradox that resists resolution?",
+  tension: "Start with yourself (if I am not for myself) and you risk selfishness. Start with others (what am I without others?) and you risk self-erasure. Which comes first — and does 'if not now, when?' resolve the tension or intensify it?",
+  views: [
+    { who: "Rambam", says: "Three distinct values held deliberately in tension — self-preservation, social obligation, and urgency. The wisdom is not in resolving them but in holding all three simultaneously." },
+    { who: "Maharal", says: "One organic, sequential argument: begin with self (you must exist before you can give), then transcend self (existence without giving is hollow), then act before the moment passes. Remove any stage and the entire teaching collapses." },
+  ],
+};
+
+_bq[14].burningQuestion = {
+  q: "Does 'say little, do much' contradict the entire premise of Pirkei Avot — a tradition built on recorded words we are obligated to study?",
+  tension: "The Oral Torah is entirely made of speech. The Mishnah exists because words were preserved. Yet Shammai says: speak less. Is there a principled distinction between Torah speech and all other speech?",
+  views: [
+    { who: "Maharal", says: "The most profound truths must be stated briefly so they can be lived fully. Pirkei Avot's deliberate terseness IS this teaching in practice — the aphorism as a form is itself the argument." },
+    { who: "Bartenura", says: "A modest promise kept builds more character than a grand declaration left unfulfilled. The teaching is about the ratio between word and deed, not about silence as such. Torah speech is not exempt; it too must be backed by life." },
+  ],
+};
+
+_bq[15].burningQuestion = {
+  q: "'Make for yourself a teacher' appears in both 1:6 and here in 1:16. Are these the same teaching — or two entirely different instructions?",
+  tension: "The Mishnah rarely repeats. When it does, something significant is being communicated. But what? Is this editorial emphasis, a different meaning, or a deliberate invitation to compare?",
+  views: [
+    { who: "Bartenura", says: "In 1:6, acquire a mentor for personal growth and learning. In 1:16, attach yourself to one halachic authority so that halakhic doubt does not paralyze you. Same words; different need; different life stage." },
+    { who: "Maharal", says: "A student who learns from many teachers but commits to none becomes intellectually rootless. 1:6 is about formation — becoming a learner. 1:16 is about decision — becoming a practitioner. You need both, in that order." },
+  ],
+};
+
+_bq[16].burningQuestion = {
+  q: "If silence is the greatest virtue for the body, why did Shimon ben Gamliel break silence to record this teaching at all?",
+  tension: "This may be the most self-refuting mishnah in all of Pirkei Avot. The man who praises silence speaks. The Mishnah that should not exist teaches us why it should. Is this irony, paradox, or the teaching itself?",
+  views: [
+    { who: "Bartenura", says: "He does not say silence is always better than speech — he says most bodily harm comes from speech. This sentence needed to be said, precisely once, to teach a world that talks far too much." },
+    { who: "Maharal", says: "The paradox is entirely deliberate and deeply instructive. You had to hear these particular words in order to learn when not to speak. The lesson required the temporary violation of its own principle. That is the highest kind of teaching." },
+  ],
+};
+
+_bq[17].burningQuestion = {
+  q: "Why does Perek 1 end with a second 'the world stands on three things' — echoing 1:2 but with completely different pillars?",
+  tension: "1:2 (Shimon HaTzaddik): Torah, Avodah, Chesed. 1:18 (Rabban Shimon ben Gamliel): Justice, Truth, Peace. The chapter opens with one triad and closes with another. Are they contradicting each other, completing each other, or saying the same thing at two different scales?",
+  views: [
+    { who: "Rambam", says: "1:2 describes the interior life of the individual — personal virtues that structure a human being. 1:18 describes the architecture of a just society. Same form, different scale: the private virtues expressed as public order." },
+    { who: "Maharal", says: "The two triads are not parallel but sequential. Torah generates truth; Avodah generates justice; Chesed generates peace. 1:2 is the root system; 1:18 is the fruit. The chapter that opens with transmission closes with the world that transmission builds." },
+  ],
+};
 

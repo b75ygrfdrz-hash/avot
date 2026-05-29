@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
+import { createVoiceRecognition } from '../lib/voice.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -17,9 +18,33 @@ const useS_o = useState, useE_o = useEffect;
 const SearchOverlay = ({ onClose, onNavigate, data }) => {
   const [query, setQuery] = useS_s('');
   const [active, setActive] = useS_s(0);
+  const [micListening, setMicListening] = useS_s(false);
   const inputRef = useR_s(null);
+  const recRef = useR_s(null);
 
   useE_s(() => { inputRef.current?.focus(); }, []);
+
+  useE_s(() => {
+    return () => recRef.current?.stop();
+  }, []);
+
+  const toggleMic = () => {
+    if (micListening) {
+      recRef.current?.stop();
+      setMicListening(false);
+      return;
+    }
+    const rec = createVoiceRecognition({
+      onInterim: (t) => setQuery(t),
+      onFinal: (t) => { setQuery(t); setMicListening(false); inputRef.current?.focus(); },
+      onError: () => setMicListening(false),
+      onEnd: () => setMicListening(false),
+    });
+    if (!rec.supported) return;
+    recRef.current = rec;
+    setMicListening(true);
+    rec.start();
+  };
 
   const results = computeResults(query, data);
 
@@ -39,10 +64,17 @@ const SearchOverlay = ({ onClose, onNavigate, data }) => {
           <Icon name="search" size={16} />
           <input ref={inputRef}
             className="search-input"
-            placeholder="Search Hebrew, English, themes, attribution, commentators…"
+            placeholder={micListening ? 'Listening…' : 'Search Hebrew, English, themes, attribution, commentators…'}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={onKey} />
+          <button
+            className={`search-mic-btn ${micListening ? 'search-mic-btn--active' : ''}`}
+            onClick={toggleMic}
+            aria-label={micListening ? 'Stop listening' : 'Search by voice'}
+            data-tip={micListening ? 'Stop' : 'Voice search'}>
+            <Icon name="mic" size={15} />
+          </button>
           <span className="admin-kbd">ESC</span>
         </div>
         <div className="search-results">

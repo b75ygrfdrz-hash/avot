@@ -12,7 +12,7 @@ const useState_mc = useState, useRef_mc = useRef, useEffect_mc = useEffect;
 const useEffect_h = useEffect, useState_ms = useState, useEffect_ms = useEffect;
 const useS_o = useState, useE_o = useEffect;
 
-const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekIdx, perakim, onSelection, highlights, onHighlightClick, layout, setLayout, showWordHover, setShowWordHover, onShareQuote, onSourceSheet, dropcap, onViewInChain }) => {
+const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekIdx, perakim, onSelection, highlights, onHighlightClick, layout, setLayout, showWordHover, setShowWordHover, onShareQuote, onSourceSheet, dropcap, onViewInChain, onAsk }) => {
   const textRef = useRef(null);
 
   // Rabbi info — popover anchored to a button beside the attribution name
@@ -166,6 +166,8 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
           <div className="divider" />
           <button onClick={onShareQuote} data-tip="Beautiful shareable quote card"><Icon name="share" size={11} /> Share</button>
           <button onClick={onSourceSheet} data-tip="Printable source sheet with commentary"><Icon name="print" size={11} /> Source sheet</button>
+          <div className="divider" />
+          <button onClick={onAsk} className="ask-toolbar-btn" data-tip="Ask a question about this mishnah — answered by AI"><Icon name="mic" size={11} /> Ask</button>
         </div>
 
         {layout === 'split' ? (
@@ -200,6 +202,8 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
           </div>
         )}
 
+        <BurningQuestion mishnah={mishnah} />
+
         <div className="reader-nav">
           {hasPrev ? (
             <button className="nav-btn prev" onClick={goPrev}>
@@ -225,6 +229,40 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
   );
 };
 
+
+// ============================================================
+// Burning Question — the single most contested question per mishnah
+// ============================================================
+const BurningQuestion = ({ mishnah }) => {
+  const [open, setOpen] = useS(false);
+  const bq = mishnah.burningQuestion;
+  if (!bq) return null;
+  return (
+    <div className={`burning-q${open ? ' burning-q--open' : ''}`}>
+      <button className="burning-q-header" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className="burning-q-icon" aria-hidden="true"><Icon name="flame" size={16} /></span>
+        <div className="burning-q-meta">
+          <span className="burning-q-label">The Burning Question</span>
+          <span className="burning-q-q">{bq.q}</span>
+        </div>
+        <span className="burning-q-chevron"><Icon name={open ? 'chevronU' : 'chevronD'} size={14} /></span>
+      </button>
+      {open && (
+        <div className="burning-q-body">
+          {bq.tension && <p className="burning-q-tension">{bq.tension}</p>}
+          <div className="burning-q-views">
+            {bq.views.map((v, i) => (
+              <div key={i} className="burning-q-view">
+                <span className="bq-who">{v.who}</span>
+                <p className="bq-says">{v.says}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ============================================================
 // Accent picker — quick color swatch popover in the header

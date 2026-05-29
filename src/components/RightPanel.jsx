@@ -128,31 +128,73 @@ const CrossRefsPanel = ({ mishnah }) => {
 // ============================================================
 // Videos
 // ============================================================
+
+function youtubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 const VideosPanel = ({ mishnah }) => {
   const videos = mishnah.videos || [];
+  const [playingIdx, setPlayingIdx] = useS(null);
+
+  // Reset player when mishnah changes
+  useE(() => { setPlayingIdx(null); }, [mishnah]);
+
   return (
     <div>
-      <div className="video-filter">
-        <button className="vf active">All</button>
-        <button className="vf">YouTube</button>
-        <button className="vf">YUTorah</button>
-        <button className="vf">TorahAnytime</button>
-        <button className="vf">Aleph Beta</button>
-      </div>
       <div className="video-list">
-        {videos.map((v, i) => (
-          <div key={i} className="video-card">
-            <div className={`video-thumb ${v.thumb || ''}`}>
-              <div className="play"><Icon name="play" size={12} /></div>
-              <span className="duration">{v.duration}</span>
+        {videos.map((v, i) => {
+          const ytId = youtubeId(v.url);
+          const isPlaying = playingIdx === i;
+          return (
+            <div key={i} className="video-card video-card--block">
+              {/* ── Embed player (shown when playing) ── */}
+              {isPlaying && ytId && (
+                <div className="video-embed-wrap">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                    title={v.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="video-embed"
+                  />
+                </div>
+              )}
+
+              {/* ── Thumbnail row (shown when not playing) ── */}
+              {!isPlaying && (
+                <div className="video-card-row">
+                  <button
+                    className={`video-thumb ${v.thumb || ''}`}
+                    onClick={() => setPlayingIdx(i)}
+                    aria-label={`Play ${v.title}`}
+                  >
+                    <div className="play"><Icon name="play" size={12} /></div>
+                    {v.duration && <span className="duration">{v.duration}</span>}
+                  </button>
+                  <div className="video-meta">
+                    <button className="video-title-btn" onClick={() => setPlayingIdx(i)}>{v.title}</button>
+                    {v.teacher && <div className="teacher">{v.teacher}</div>}
+                    <div className="source">{v.source}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Title bar shown below embed ── */}
+              {isPlaying && (
+                <div className="video-card-row video-card-row--playing">
+                  <div className="video-meta">
+                    <div className="title">{v.title}</div>
+                    {v.teacher && <div className="teacher">{v.teacher}</div>}
+                  </div>
+                  <button className="video-close-btn" onClick={() => setPlayingIdx(null)} aria-label="Close video">✕</button>
+                </div>
+              )}
             </div>
-            <div className="video-meta">
-              <div className="title">{v.title}</div>
-              <div className="teacher">{v.teacher}</div>
-              <div className="source">{v.source}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {videos.length === 0 && (
           <div style={{color:'var(--muted)', fontSize:13, padding:'20px 0'}}>No shiurim linked yet.</div>
         )}

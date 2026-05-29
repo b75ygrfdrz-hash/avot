@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { Mascot, MASCOT_META } from './kidsV2Mascots.jsx';
+import { getStopIcon as getStopRenderIcon } from './kidsV2Icons.jsx';
 import { Splash } from './Splash.jsx';
 import {
   loadState,
@@ -19,6 +20,7 @@ import {
   refillAllHearts,
   setAvatar,
   HEART_FULL,
+  HEART_REFILL_MS,
   ZUZIM_PER_LESSON,
   ZUZIM_PERFECT_BONUS,
   ZUZIM_HEART_COST,
@@ -42,6 +44,45 @@ const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
 
 const ANIMAL_EMOJI = { ari: '🦁', namer: '🐆', nesher: '🦅', tzvi: '🦌' };
+
+// Per-mishnah themed icons for the skill path
+const STOP_ICONS = {
+  '1.1':  { emoji: '📜', gradient: ['#7c3aed','#4c1d95'], shadow: '#4c1d95', badge: '✡️' },  // Torah chain from Sinai
+  '1.2':  { emoji: '🏛️', gradient: ['#2563eb','#1e3a8a'], shadow: '#1e3a8a', badge: '🔱' },  // Three pillars
+  '1.3':  { emoji: '🤲', gradient: ['#059669','#064e3b'], shadow: '#064e3b', badge: '💛' },  // Serve not for reward
+  '1.4':  { emoji: '🏠', gradient: ['#d97706','#78350f'], shadow: '#78350f', badge: '🌿' },  // House of meeting
+  '1.5':  { emoji: '🚪', gradient: ['#9333ea','#581c87'], shadow: '#581c87', badge: '🌟' },  // Open your doors wide
+  '1.6':  { emoji: '👫', gradient: ['#dc2626','#7f1d1d'], shadow: '#7f1d1d', badge: '💫' },  // Get a teacher & friend
+  '1.7':  { emoji: '🛡️', gradient: ['#0369a1','#0c4a6e'], shadow: '#0c4a6e', badge: '⚡' },  // Distance from evil neighbor
+  '1.8':  { emoji: '⚖️', gradient: ['#0d9488','#134e4a'], shadow: '#134e4a', badge: '🌊' },  // Be not a sole judge
+  '1.9':  { emoji: '🔍', gradient: ['#16a34a','#14532d'], shadow: '#14532d', badge: '🕵️' },  // Examine witnesses carefully
+  '1.10': { emoji: '❤️', gradient: ['#e11d48','#881337'], shadow: '#881337', badge: '🌹' },  // Love work
+  '1.11': { emoji: '📢', gradient: ['#ea580c','#7c2d12'], shadow: '#7c2d12', badge: '🔇' },  // Guard your words
+  '1.12': { emoji: '🕊️', gradient: ['#0ea5e9','#0369a1'], shadow: '#0c4a6e', badge: '☀️' },  // Hillel: love peace
+  '1.13': { emoji: '🌊', gradient: ['#6366f1','#312e81'], shadow: '#312e81', badge: '🌙' },  // Name that grows, lost
+  '1.14': { emoji: '🪞', gradient: ['#db2777','#831843'], shadow: '#831843', badge: '💡' },  // If not now, when?
+  '1.15': { emoji: '😊', gradient: ['#ca8a04','#713f12'], shadow: '#713f12', badge: '🌈' },  // Cheerful face
+  '1.16': { emoji: '📚', gradient: ['#7c3aed','#4c1d95'], shadow: '#4c1d95', badge: '🎓' },  // Get a teacher
+  '1.17': { emoji: '🤫', gradient: ['#047857','#064e3b'], shadow: '#064e3b', badge: '🌿' },  // Silence is a fence
+  '1.18': { emoji: '☮️', gradient: ['#2563eb','#1e3a8a'], shadow: '#1e3a8a', badge: '🕊️' },  // Truth, justice, peace
+};
+// Fallback cycling palette for stops beyond ch.1
+const STOP_FALLBACK = [
+  { emoji: '⭐', gradient: ['#f59e0b','#b45309'], shadow: '#78350f', badge: '✨' },
+  { emoji: '🌟', gradient: ['#7c3aed','#4c1d95'], shadow: '#4c1d95', badge: '💫' },
+  { emoji: '💫', gradient: ['#2563eb','#1e3a8a'], shadow: '#1e3a8a', badge: '🌙' },
+  { emoji: '🔥', gradient: ['#dc2626','#7f1d1d'], shadow: '#7f1d1d', badge: '⚡' },
+  { emoji: '💎', gradient: ['#0ea5e9','#0369a1'], shadow: '#0c4a6e', badge: '🌊' },
+  { emoji: '🎯', gradient: ['#059669','#064e3b'], shadow: '#064e3b', badge: '🏹' },
+  { emoji: '🏆', gradient: ['#d97706','#78350f'], shadow: '#78350f', badge: '🥇' },
+  { emoji: '🎨', gradient: ['#9333ea','#581c87'], shadow: '#581c87', badge: '🖌️' },
+  { emoji: '🌈', gradient: ['#0d9488','#134e4a'], shadow: '#134e4a', badge: '☀️' },
+  { emoji: '🦋', gradient: ['#db2777','#831843'], shadow: '#831843', badge: '🌸' },
+];
+function getStopIcon(stop) {
+  return STOP_ICONS[stop.key] ||
+    STOP_FALLBACK[(stop.perek * 10 + stop.mishnah) % STOP_FALLBACK.length];
+}
 
 // ============================================================
 // useKidsState — reactive state hook with tick
@@ -82,54 +123,192 @@ const ZuzimCoin = ({ size = 18 }) => (
 );
 
 // ============================================================
+// HeartsPopover — tapping hearts or Zuzim opens this
+// ============================================================
+const HeartsPopover = ({ state, onClose }) => {
+  const [now, setNow] = useS(Date.now());
+  // Live countdown ticker
+  useE(() => {
+    if (state.hearts >= HEART_FULL) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [state.hearts]);
+
+  const missing = HEART_FULL - state.hearts;
+  const zuzim = state.zuzim || 0;
+  const canOne  = missing > 0 && zuzim >= ZUZIM_HEART_COST;
+  const canAll  = missing > 0 && zuzim >= ZUZIM_FULL_COST;
+
+  // Time until next heart
+  let timerLabel = null;
+  if (missing > 0 && state.heartsRefillAt) {
+    const ms = Math.max(0, state.heartsRefillAt - now);
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    timerLabel = `Next heart in ${m}:${String(s).padStart(2,'0')}`;
+  }
+
+  function doRefillOne() {
+    if (refillOneHeart()) { onClose(); }
+  }
+  function doRefillAll() {
+    if (refillAllHearts()) { onClose(); }
+  }
+
+  return (
+    <div className="kv2-popover-backdrop" onClick={onClose}>
+      <div className="kv2-popover kv2-hearts-popover" onClick={e => e.stopPropagation()}>
+        <button className="kv2-popover-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="kv2-hp-title">❤️ Hearts</div>
+        <div className="kv2-hp-hearts">
+          {Array.from({ length: HEART_FULL }, (_, i) => (
+            <span key={i} className={`kv2-hp-heart ${i < state.hearts ? 'on' : 'off'}`}>
+              {i < state.hearts ? '♥' : '♡'}
+            </span>
+          ))}
+        </div>
+        {missing === 0 ? (
+          <p className="kv2-hp-status full">You have full hearts!</p>
+        ) : (
+          <>
+            <p className="kv2-hp-status">{missing} heart{missing > 1 ? 's' : ''} missing</p>
+            {timerLabel && <p className="kv2-hp-timer">⏱ {timerLabel}</p>}
+          </>
+        )}
+
+        <div className="kv2-hp-divider" />
+
+        <div className="kv2-hp-balance">
+          <ZuzimCoin size={18} />
+          <span>{zuzim} Zuzim</span>
+          <span className="kv2-hp-balance-hint">earned by completing lessons</span>
+        </div>
+
+        {missing > 0 && (
+          <div className="kv2-hp-actions">
+            <button
+              className={`kv2-hp-btn ${canOne ? '' : 'disabled'}`}
+              onClick={canOne ? doRefillOne : undefined}
+              disabled={!canOne}
+              title={!canOne ? `Need ${ZUZIM_HEART_COST} Zuzim` : ''}
+            >
+              Refill 1 heart
+              <span className="kv2-hp-cost"><ZuzimCoin size={13} /> {ZUZIM_HEART_COST}</span>
+            </button>
+            <button
+              className={`kv2-hp-btn primary ${canAll ? '' : 'disabled'}`}
+              onClick={canAll ? doRefillAll : undefined}
+              disabled={!canAll}
+              title={!canAll ? `Need ${ZUZIM_FULL_COST} Zuzim` : ''}
+            >
+              Refill all hearts
+              <span className="kv2-hp-cost"><ZuzimCoin size={13} /> {ZUZIM_FULL_COST}</span>
+            </button>
+          </div>
+        )}
+        {missing > 0 && !canOne && (
+          <p className="kv2-hp-earn-hint">
+            Complete lessons to earn more Zuzim.
+            You get {ZUZIM_PER_LESSON} 🪙 per lesson, {ZUZIM_PERFECT_BONUS} bonus for a perfect run.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// XpPopover — tapping the ⭐ XP badge opens this
+// ============================================================
+const XpPopover = ({ state, onClose }) => {
+  const pct = Math.min(100, Math.round((state.dailyXp / state.dailyGoal) * 100));
+  const totalLessons = Object.keys(state.completed || {}).length;
+  const totalStars   = Object.values(state.completed || {}).reduce((s, v) => s + (v.stars || 0), 0);
+  return (
+    <div className="kv2-popover-backdrop" onClick={onClose}>
+      <div className="kv2-popover kv2-xp-popover" onClick={e => e.stopPropagation()}>
+        <button className="kv2-popover-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="kv2-hp-title">⭐ Your Progress</div>
+        <div className="kv2-xp-pop-stats">
+          <div className="kv2-xp-pop-stat">
+            <span className="kv2-xp-pop-num">{state.xp}</span>
+            <span className="kv2-xp-pop-lbl">Total XP</span>
+          </div>
+          <div className="kv2-xp-pop-stat">
+            <span className="kv2-xp-pop-num">{totalLessons}</span>
+            <span className="kv2-xp-pop-lbl">Lessons done</span>
+          </div>
+          <div className="kv2-xp-pop-stat">
+            <span className="kv2-xp-pop-num">{totalStars}⭐</span>
+            <span className="kv2-xp-pop-lbl">Stars earned</span>
+          </div>
+        </div>
+        <div className="kv2-hp-divider" />
+        <div className="kv2-xp-pop-goal-label">Today's goal — {state.dailyXp} / {state.dailyGoal} XP</div>
+        <div className="kv2-xp-pop-bar">
+          <div className="kv2-xp-pop-fill" style={{ width: pct + '%' }} />
+        </div>
+        {pct >= 100 && <p className="kv2-xp-pop-done">🎉 Daily goal complete!</p>}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
 // HUD — header strip with streak, hearts, XP, mute toggle
 // ============================================================
 const Hud = ({ state, onClose, onShowStreak, onShowLeaderboard }) => {
   const heartsArr = Array.from({ length: HEART_FULL }, (_, i) => i < state.hearts);
   const [muted, setMutedS] = useS(isMuted());
+  const [showHearts, setShowHearts] = useS(false);
+  const [showXp, setShowXp] = useS(false);
   useE(() => onMuteChange(() => setMutedS(isMuted())), []);
   const avatarEmoji = state.avatar ? ANIMAL_EMOJI[state.avatar] : null;
   return (
-    <div className="kv2-hud">
-      <button className="kv2-hud-close kv2-hud-switch" onClick={onClose} aria-label="Switch to Adult Mode">
-        {avatarEmoji
-          ? <span className="kv2-hud-avatar" aria-hidden="true">{avatarEmoji}</span>
-          : <Icon name="close" size={14} />}
-        <span className="kv2-hud-switch-label">Adult</span>
-      </button>
-      <button className="kv2-hud-item kv2-streak kv2-hud-btn" title="Streak calendar" onClick={onShowStreak}>
-        <span className="kv2-streak-icon" aria-hidden="true">🔥</span>
-        <span className="kv2-streak-num">{state.streak}</span>
-      </button>
-      <div className="kv2-hud-item kv2-hearts" title="Lives">
-        {heartsArr.map((on, i) => (
-          <span key={i} className={`kv2-heart ${on ? 'on' : 'off'}`} aria-hidden="true">{on ? '♥' : '♡'}</span>
-        ))}
+    <>
+      <div className="kv2-hud">
+        <button className="kv2-hud-close kv2-hud-switch" onClick={onClose} aria-label="Switch to Adult Mode">
+          {avatarEmoji
+            ? <span className="kv2-hud-avatar" aria-hidden="true">{avatarEmoji}</span>
+            : <Icon name="close" size={14} />}
+          <span className="kv2-hud-switch-label">Adult</span>
+        </button>
+        <button className="kv2-hud-item kv2-streak kv2-hud-btn" title="Streak calendar" onClick={onShowStreak}>
+          <span className="kv2-streak-icon" aria-hidden="true">🔥</span>
+          <span className="kv2-streak-num">{state.streak}</span>
+        </button>
+        <button className="kv2-hud-item kv2-hearts kv2-hud-btn" title="Hearts — tap to refill" onClick={() => setShowHearts(true)} aria-label="Hearts">
+          {heartsArr.map((on, i) => (
+            <span key={i} className={`kv2-heart ${on ? 'on' : 'off'}`} aria-hidden="true">{on ? '♥' : '♡'}</span>
+          ))}
+        </button>
+        <button className="kv2-hud-item kv2-xp kv2-hud-btn" title="XP & progress" onClick={() => setShowXp(true)} aria-label="XP">
+          <span className="kv2-xp-icon" aria-hidden="true">⭐</span>
+          <span className="kv2-xp-num">{state.xp}</span>
+        </button>
+        <button className="kv2-hud-item kv2-zuzim kv2-hud-btn" title="Zuzim — spend to refill hearts" onClick={() => setShowHearts(true)} aria-label="Zuzim">
+          <ZuzimCoin size={16} />
+          <span className="kv2-zuzim-num">{state.zuzim || 0}</span>
+        </button>
+        <button className="kv2-hud-trophy" title="Weekly leaderboard" onClick={onShowLeaderboard} aria-label="Leaderboard">
+          🏆
+        </button>
+        <button
+          className="kv2-hud-mute"
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            if (!next) setTimeout(() => playTestTone(), 60);
+          }}
+          aria-label={muted ? 'Unmute' : 'Mute'}
+          title={muted ? 'Unmute (and play test tone)' : 'Mute'}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
       </div>
-      <div className="kv2-hud-item kv2-xp" title="Total XP">
-        <span className="kv2-xp-icon" aria-hidden="true">⭐</span>
-        <span className="kv2-xp-num">{state.xp}</span>
-      </div>
-      <div className="kv2-hud-item kv2-zuzim" title="Zuzim — spend to refill hearts">
-        <ZuzimCoin size={16} />
-        <span className="kv2-zuzim-num">{state.zuzim || 0}</span>
-      </div>
-      <button className="kv2-hud-trophy" title="Weekly leaderboard" onClick={onShowLeaderboard} aria-label="Leaderboard">
-        🏆
-      </button>
-      <button
-        className="kv2-hud-mute"
-        onClick={() => {
-          const next = !muted;
-          setMuted(next);
-          if (!next) setTimeout(() => playTestTone(), 60);
-        }}
-        aria-label={muted ? 'Unmute' : 'Mute'}
-        title={muted ? 'Unmute (and play test tone)' : 'Mute'}
-      >
-        {muted ? '🔇' : '🔊'}
-      </button>
-    </div>
+      {showHearts && <HeartsPopover state={state} onClose={() => setShowHearts(false)} />}
+      {showXp     && <XpPopover     state={state} onClose={() => setShowXp(false)} />}
+    </>
   );
 };
 
@@ -218,9 +397,9 @@ const DailyGoal = ({ state }) => {
 const PEREK_NAMES_EN = ['', 'Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5', 'Chapter 6'];
 const PEREK_NAMES_HE = ['', 'פֶּרֶק א׳', 'פֶּרֶק ב׳', 'פֶּרֶק ג׳', 'פֶּרֶק ד׳', 'פֶּרֶק ה׳', 'פֶּרֶק ו׳'];
 const PEREK_THEMES = ['', 'The Chain of Tradition', 'The World Stands on Three', 'Where We Come From', 'Be a Disciple', 'Tens and Sevens', 'The Acquisition of Torah'];
-// Warm, Torah-inspired palette — one hue per chapter
-const PEREK_COLORS = ['', '#e07b39', '#3d85c8', '#8b5cf6', '#059669', '#dc2626', '#b45309'];
-const PEREK_DARK   = ['', '#b85e22', '#2c66a0', '#6d3ed6', '#037550', '#b01c1c', '#8a3e04'];
+// Bold, saturated palette — one hue per chapter
+const PEREK_COLORS = ['', '#ff6b35', '#1cb0f6', '#9333ea', '#58cc02', '#ff4e60', '#f59e0b'];
+const PEREK_DARK   = ['', '#c84820', '#0077c8', '#6d28d9', '#3a8a00', '#c8243a', '#b45309'];
 const PEREK_ICON   = ['', '📜', '🏛️', '🌿', '🧑‍🏫', '✡️', '📖'];
 
 const SectionHeader = ({ perek, done, locked }) => {
@@ -252,6 +431,26 @@ const SectionHeader = ({ perek, done, locked }) => {
 };
 
 // ============================================================
+// StopFace — the icon inside each path stop button
+// ============================================================
+const StopFace = ({ stop, isCurrent, isDone, isLocked }) => {
+  if (isDone)   return <span className="kv2-stop-check" aria-hidden="true">✓</span>;
+  if (isLocked) return <span className="kv2-stop-lock"  aria-hidden="true">🔒</span>;
+  const renderIcon = getStopRenderIcon(stop);
+  const Comp = renderIcon.Component;
+  return (
+    <span className={`kv2-stop-face${isCurrent ? ' bouncing' : ''}`} aria-hidden="true">
+      {renderIcon.type === 'img'
+        ? <img src={renderIcon.src} alt="" className="kv2-stop-img" />
+        : Comp ? <Comp /> : null}
+    </span>
+  );
+};
+
+// PathDecorations removed — clean path, no side distractions
+const PathDecorations = () => null;
+
+// ============================================================
 // Path — skill-tree of stops, grouped by perek
 // ============================================================
 const Path = ({ stops, state, onPick }) => {
@@ -271,6 +470,7 @@ const Path = ({ stops, state, onPick }) => {
   let earlierPerekLocked = false;
   return (
     <div className="kv2-path">
+      <PathDecorations />
       {groups.map((group, gi) => {
         const groupComplete = group.stops.length > 0 && isPerekComplete(group.stops, state.completed);
         // First perek is always unlocked. Later perakim wait for earlier ones.
@@ -290,42 +490,21 @@ const Path = ({ stops, state, onPick }) => {
               const absIdx = stops.findIndex(s => s.key === stop.key);
               const isCurrent = absIdx === currentIdx;
               const isLocked = (!stop.hasLesson && !done) || groupLocked;
-              const meta = MASCOT_META[stop.animal];
+              const icon = getStopIcon(stop);
               // Zigzag offsets: 8-point wave pattern
               const offset = [0, 48, 76, 48, 0, -48, -76, -48][stopRelIdx % 8];
-              // 3D coin shadow colour
-              const shadowCol = done
-                ? meta.color + 'cc'
-                : isCurrent
-                  ? meta.color + 'cc'
-                  : 'rgba(0,0,0,0.16)';
+              const ringCol   = isLocked ? '#c8c2bc' : icon.gradient[0];
+              const shadowCol = isLocked ? 'rgba(0,0,0,0.10)' : icon.shadow + 'aa';
               return (
                 <div key={stop.key} className="kv2-stop-wrap" style={{ transform: `translateX(${offset}px)` }}>
                   <button
                     className={`kv2-stop ${done ? 'done' : ''} ${isCurrent ? 'current' : ''} ${isLocked ? 'locked' : ''}`}
                     onClick={() => stop.hasLesson && !groupLocked && onPick(stop)}
                     disabled={isLocked}
-                    style={{
-                      background: done
-                        ? meta.color
-                        : isCurrent
-                          ? meta.color
-                          : isLocked
-                            ? '#c8c2bb'
-                            : '#ddd7cf',
-                      '--stop-shadow': shadowCol,
-                    }}
+                    style={{ '--stop-ring': ringCol, '--stop-shadow': shadowCol }}
                     aria-label={`${stop.perek}:${stop.mishnah}${done ? ` (${starsEarned} stars)` : isCurrent ? ' – start lesson' : ''}`}
                   >
-                    {done ? (
-                      <span className="kv2-stop-check">✓</span>
-                    ) : isLocked ? (
-                      <span className="kv2-stop-lock" aria-hidden="true">🔒</span>
-                    ) : (
-                      <div className="kv2-stop-mascot">
-                        <Mascot which={stop.animal} size={isCurrent ? 60 : 50} />
-                      </div>
-                    )}
+                    <StopFace stop={stop} isCurrent={isCurrent} isDone={done} isLocked={isLocked} />
                     {isCurrent && <span className="kv2-stop-pulse" />}
                   </button>
 
@@ -624,6 +803,7 @@ const HebrewWithTranslation = ({ hebrew, words }) => {
 // ============================================================
 const Intro = ({ stop, lesson, onStart, onExit }) => {
   const meta = MASCOT_META[stop.animal];
+  const stopIcon = getStopIcon(stop);
   // Look up the actual Mishnah text from window.PIRKEI_AVOT
   const data = (typeof window !== 'undefined' && window.PIRKEI_AVOT) ? window.PIRKEI_AVOT : null;
   const perekData = data && data.perakim.find(p => p.num === stop.perek);
@@ -655,7 +835,7 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
   useE(() => () => { try { window.speechSynthesis.cancel(); } catch (e) {} }, []);
 
   return (
-    <div className="kv2-intro" style={{ background: meta.bg }}>
+    <div className="kv2-intro" style={{ background: `linear-gradient(180deg, ${stopIcon.color}38 0%, #f0f4ff 55%), #f0f4ff` }}>
       <div className="kv2-intro-top">
         <button className="kv2-lesson-exit" onClick={onExit} aria-label="Exit">
           <Icon name="close" size={18} />

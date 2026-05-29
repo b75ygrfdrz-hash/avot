@@ -10,6 +10,7 @@ import { MesorahTree } from './components/MesorahTree.jsx';
 import { ShabbatTable } from './components/ShabbatTable.jsx';
 import { IdeasList } from './components/IdeasList.jsx';
 import { AuthModal } from './components/AuthModal.jsx';
+import { AskPanel } from './components/AskPanel.jsx';
 
 // Lazy-loaded: kids.jsx and admin.jsx both pull in illustrations.jsx
 // (6.3MB of base64 artwork). Loading them on demand drops the initial
@@ -50,7 +51,6 @@ import { MobileBottomNav, MobilePanelSheet } from './components/mobile.jsx';
 import { ColoringPage, MemorizeMode, NotePopover, ParentDashboard, QuoteCard, SelectionToolbar, SourceSheet } from './components/overlays.jsx';
 import { AvotTweaks } from './components/tweaks.jsx';
 import { useSync } from './lib/useSync.js';
-import { Splash } from './components/Splash.jsx';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -94,8 +94,6 @@ const App = () => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.pos) || '{"p":0,"m":0}'); }
     catch { return { p: 0, m: 0 }; }
   })();
-
-  const [showSplash, setShowSplash] = useS(true);
 
   // Determine which Kids implementation to show. Evaluated at render time
   // (not module-level) so the URL param and localStorage are read after the
@@ -151,6 +149,7 @@ const App = () => {
   const [showShabbat, setShowShabbat] = useS(false);
   const [showList, setShowList] = useS(false);
   const [showAuth, setShowAuth] = useS(false);
+  const [showAsk, setShowAsk] = useS(false);
   const [authMode, setAuthMode] = useS('signin'); // 'signin' | 'signup'
   const openAuth = (mode = 'signin') => { setAuthMode(mode); setShowAuth(true); };
   const cameFromInApp = useR(false);
@@ -454,8 +453,6 @@ const App = () => {
   };
 
   // Render
-  if (showSplash) return <Splash onDone={() => setShowSplash(false)} />;
-
   if (!onboarded) {
     return <Onboarding setMode={setMode} onDone={() => setOnboarded(true)} />;
   }
@@ -586,6 +583,7 @@ const App = () => {
               onSourceSheet={() => setShowSheet(true)}
               dropcap={dropcap}
               onViewInChain={(id) => openMesorah(id)}
+              onAsk={() => setShowAsk(true)}
             />
             <RightPanel mishnah={mishnah} perek={perek} highlights={highlights} />
           </>
@@ -599,6 +597,7 @@ const App = () => {
         <NotePopover pos={notePop} hl={editingHl}
           onSave={saveNote} onClose={() => { setNotePop(null); setEditingHl(null); }} />
       )}
+      {showAsk && mishnah && <AskPanel mishnah={mishnah} perek={perek} onClose={() => setShowAsk(false)} />}
       {showQuote && <QuoteCard mishnah={mishnah} perek={perek} onClose={() => setShowQuote(false)} />}
       {showMemorize && <MemorizeMode perek={perek} onClose={() => setShowMemorize(false)} />}
       {showSheet && <SourceSheet mishnah={mishnah} perek={perek} onClose={() => setShowSheet(false)} />}

@@ -49,9 +49,39 @@ const IdeasBoard = ({ onClose }) => {
   const [draftNotes, setDraftNotes] = useS('');
   const [filter, setFilter] = useS('all');
   const [editingId, setEditingId] = useS(null);
+  const [dragOverId, setDragOverId] = useS(null);
+  const dragIdRef = useR(null);
   const titleRef = useR(null);
 
   useE(() => { saveIdeas(ideas); }, [ideas]);
+
+  function onDragStart(e, id) {
+    dragIdRef.current = id;
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragOver(e, id) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== dragIdRef.current) setDragOverId(id);
+  }
+  function onDragLeave() { setDragOverId(null); }
+  function onDrop(e, targetId) {
+    e.preventDefault();
+    setDragOverId(null);
+    const fromId = dragIdRef.current;
+    if (!fromId || fromId === targetId) return;
+    setIdeas(prev => {
+      const arr = [...prev];
+      const fromIdx = arr.findIndex(i => i.id === fromId);
+      const toIdx   = arr.findIndex(i => i.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const [item] = arr.splice(fromIdx, 1);
+      arr.splice(toIdx, 0, item);
+      return arr;
+    });
+    dragIdRef.current = null;
+  }
+  function onDragEnd() { setDragOverId(null); dragIdRef.current = null; }
 
   const counts = useMemo(() => {
     const c = { all: ideas.length };
@@ -178,7 +208,16 @@ const IdeasBoard = ({ onClose }) => {
             const s = STATUSES.find(x => x.id === i.status) || STATUSES[0];
             const editing = editingId === i.id;
             return (
-              <div key={i.id} className="ideas-card">
+              <div key={i.id}
+                className={`ideas-card${dragOverId === i.id ? ' ideas-card--drop-target' : ''}`}
+                draggable
+                onDragStart={e => onDragStart(e, i.id)}
+                onDragOver={e => onDragOver(e, i.id)}
+                onDragLeave={onDragLeave}
+                onDrop={e => onDrop(e, i.id)}
+                onDragEnd={onDragEnd}
+              >
+                <span className="ideas-drag-handle" title="Drag to reorder">⠿</span>
                 <button className="ideas-status" style={{ background: s.color }} onClick={() => cycleStatus(i)} title="Click to cycle status">
                   {s.label}
                 </button>

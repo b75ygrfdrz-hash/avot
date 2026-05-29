@@ -18,13 +18,16 @@ export const MASCOT_META = {
   ari:    { name: 'Ari',    he: 'אֲרִי', trait: 'Strong', color: '#ff6b6b', bg: '#ffe0e0', traitHe: 'גִּבּוֹר' },
 };
 
-export const Mascot = ({ which = 'ari', size = 80, mood = 'happy' }) => {
+// mood: 'idle' | 'happy' | 'correct' | 'wrong' | 'combo' | 'perfect' | 'sad'
+// 'happy' and 'idle' are the same; 'sad' maps to 'wrong' (backwards compat).
+export const Mascot = ({ which = 'ari', size = 80, mood = 'idle' }) => {
   const emoji = EMOJI[which] || EMOJI.ari;
-  // Emoji size: a bit smaller than the box so it doesn't touch the edge
   const fontSize = Math.round(size * 0.78);
+  // Normalise legacy mood values
+  const normalised = mood === 'sad' ? 'wrong' : mood === 'happy' ? 'idle' : mood;
   return (
     <span
-      className="kv2-emoji-mascot"
+      className={`kv2-emoji-mascot kv2-mascot-${normalised}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -33,9 +36,6 @@ export const Mascot = ({ which = 'ari', size = 80, mood = 'happy' }) => {
         height: size,
         fontSize: fontSize,
         lineHeight: 1,
-        // Apple emoji needs a tweak so it sits centered vertically
-        transform: mood === 'sad' ? 'rotate(-8deg)' : 'none',
-        transition: 'transform 0.3s ease',
       }}
       role="img"
       aria-label={MASCOT_META[which]?.name || which}
