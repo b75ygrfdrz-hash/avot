@@ -1,13 +1,23 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { AdminLogin } from './admin-shared.jsx';
+import { AuthModal } from './AuthModal.jsx';
 import { isAdminAuthed } from '../lib/admin.js';
+import {
+  isConfigured,
+  getSession,
+  onAuthChange,
+  fetchIdeas,
+  saveIdeas as saveIdeasRemote,
+} from '../lib/supabase.js';
 
 const { useState, useEffect, useRef, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef;
 
-// Hidden ideas list — reachable only via #avot/list
-// Gated behind the existing admin password.
+// Hidden ideas list — reachable only via #avot/list.
+// When the database is configured, the board is gated behind a real login
+// and saved online (private to that account). Otherwise it falls back to the
+// old admin-password gate with browser-only storage.
 
 const STORAGE_KEY = 'avot.ideas.v1';
 
@@ -36,15 +46,52 @@ function uid() {
 }
 
 const IdeasList = ({ onClose }) => {
-  const [authed, setAuthed] = useS(isAdminAuthed());
-  if (!authed) {
-    return <AdminLogin onAuth={() => setAuthed(true)} onClose={onClose} />;
+  const [session, setSession] = useS(undefined); // undefined = checking, null = logged out
+
+  useE(() => {
+    if (!isConfigured) { setSession(null); return; }
+    let active = true;
+    getSession().then(s => { if (active) setSession(s || null); });
+    const unsub = onAuthChange(s => { if (active) setSession(s || null); });
+    return () => { active = false; unsub(); };
+  }, []);
+
+  // No database configured → old behaviour: admin password + browser-only board.
+  if (!isConfigured) return <LocalGate onClose={onClose} />;
+
+  if (session === undefined) {
+    return (
+      <div className="ideas-shell">
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Loading…</div>
+      </div>
+    );
   }
+  if (!session) {
+    // AuthModal calls onClose both on the X button and after a successful
+    // sign-in. Only close the whole list if the user actually backed out
+    // (still logged out); a successful sign-in just reveals the board.
+    const handleAuthClose = async () => {
+      const s = await getSession();
+      if (s) setSession(s);
+      else onClose && onClose();
+    };
+    return <AuthModal onClose={handleAuthClose} defaultMode="signin" defaultMethod="password" />;
+  }
+  return <IdeasBoard onClose={onClose} userId={session.user.id} />;
+};
+
+// Fallback used only when Supabase is not configured: the original
+// admin-password gate with a browser-only board.
+const LocalGate = ({ onClose }) => {
+  const [authed, setAuthed] = useS(isAdminAuthed());
+  if (!authed) return <AdminLogin onAuth={() => setAuthed(true)} onClose={onClose} />;
   return <IdeasBoard onClose={onClose} />;
 };
 
-const IdeasBoard = ({ onClose }) => {
-  const [ideas, setIdeas] = useS(loadIdeas);
+const IdeasBoard = ({ onClose, userId }) => {
+  const online = !!userId;
+  const [ideas, setIdeas] = useS([]);
+  const [loading, setLoading] = useS(true);
   const [draft, setDraft] = useS('');
   const [draftNotes, setDraftNotes] = useS('');
   const [filter, setFilter] = useS('all');
@@ -52,8 +99,47 @@ const IdeasBoard = ({ onClose }) => {
   const [dragOverId, setDragOverId] = useS(null);
   const dragIdRef = useR(null);
   const titleRef = useR(null);
+  const loadedRef = useR(false);
+  const saveTimer = useR(null);
 
-  useE(() => { saveIdeas(ideas); }, [ideas]);
+  // Initial load: online from the account (migrating any browser ideas the
+  // first time), or browser-only when there is no login.
+  useE(() => {
+    let cancelled = false;
+    (async () => {
+      if (!online) {
+        if (!cancelled) { setIdeas(loadIdeas()); setLoading(false); loadedRef.current = true; }
+        return;
+      }
+      const local = loadIdeas();
+      const { data: remote } = await fetchIdeas(userId);
+      if (cancelled) return;
+      let initial;
+      if (remote && remote.length) {
+        initial = remote;
+      } else if (local.length) {
+        initial = local;            // first move from browser → account
+        saveIdeasRemote(userId, local);
+      } else {
+        initial = remote || [];
+      }
+      setIdeas(initial);
+      setLoading(false);
+      loadedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  // Persist on every change (after the first load). Browser cache is instant;
+  // the online save is debounced so quick edits don't spam the database.
+  useE(() => {
+    if (!loadedRef.current) return;
+    saveIdeas(ideas);
+    if (online) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => saveIdeasRemote(userId, ideas), 400);
+    }
+  }, [ideas]);
 
   function onDragStart(e, id) {
     dragIdRef.current = id;
@@ -131,6 +217,14 @@ const IdeasBoard = ({ onClose }) => {
     URL.revokeObjectURL(url);
   }
 
+  if (loading) {
+    return (
+      <div className="ideas-shell">
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>Loading your ideas…</div>
+      </div>
+    );
+  }
+
   return (
     <div className="ideas-shell">
       <div className="ideas-header">
@@ -175,7 +269,7 @@ const IdeasBoard = ({ onClose }) => {
             rows={2}
           />
           <div className="ideas-compose-foot">
-            <span className="ideas-hint">Stored locally in your browser.</span>
+            <span className="ideas-hint">{online ? 'Saved to your account · synced across devices.' : 'Stored locally in your browser.'}</span>
             <button className="ideas-add" onClick={add} disabled={!draft.trim()}>
               <Icon name="plus" size={13} /> Add idea
             </button>

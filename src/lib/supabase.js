@@ -167,6 +167,29 @@ export async function fetchKidsV2State(userId) {
   } catch (e) { return { data: null, error: e }; }
 }
 
+// ---- Ideas board (one JSONB row per user, like kidsv2_state) ----
+export async function fetchIdeas(userId) {
+  if (!supabase || !userId) return { data: null, error: null };
+  try {
+    const { data, error } = await supabase
+      .from('ideas')
+      .select('items')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return { data: data?.items || null, error };
+  } catch (e) { return { data: null, error: e }; }
+}
+
+export async function saveIdeas(userId, items) {
+  if (!supabase || !userId) return { error: null };
+  try {
+    return await supabase.from('ideas').upsert(
+      { user_id: userId, items, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  } catch (e) { return { error: e }; }
+}
+
 // Returns true if this user already has any data stored in Supabase.
 export async function hasAnyData(userId) {
   if (!supabase) return false;

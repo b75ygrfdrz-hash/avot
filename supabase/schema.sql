@@ -146,6 +146,20 @@ create policy kidsv2_owner on public.kidsv2_state
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- =========================================================================
+-- Ideas board (single JSONB array per user — matches src/components/IdeasList.jsx)
+-- The private "future growth" kanban reachable at #avot/list.
+-- =========================================================================
+create table if not exists public.ideas (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  items jsonb not null default '[]',
+  updated_at timestamptz default now()
+);
+alter table public.ideas enable row level security;
+drop policy if exists ideas_owner on public.ideas;
+create policy ideas_owner on public.ideas
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- =========================================================================
 -- Convenience: who-am-I view (lets the client fetch role + profile in one go)
 -- =========================================================================
 create or replace view public.me as
