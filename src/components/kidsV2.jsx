@@ -821,6 +821,13 @@ const Intro = ({ stop, lesson, onStart, onExit }) => {
       const u = new SpeechSynthesisUtterance(hebrew);
       u.lang = 'he-IL';
       u.rate = 0.8;
+      // Use a male Hebrew voice when the device has one; otherwise pitch
+      // the default (usually female) Hebrew voice down for a deeper read.
+      const voices = window.speechSynthesis.getVoices() || [];
+      const hebrew2 = voices.filter(v => (v.lang || '').toLowerCase().startsWith('he'));
+      const male = hebrew2.find(v => /asaf|arnon|amir|male/i.test(v.name || ''));
+      if (male) u.voice = male;
+      u.pitch = male ? 1 : 0.7;
       window.speechSynthesis.speak(u);
     } catch (e) {}
   };
