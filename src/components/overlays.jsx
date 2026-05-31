@@ -71,81 +71,7 @@ const QuoteCard = ({ mishnah, perek, onClose }) => {
 };
 
 // ============================================================
-// Memorize mode — fade to memory
-// ============================================================
-
-// One mishnah, learned by the fade technique: progressively hide words
-// and recall them, until the whole text is hidden and known by heart.
-const FadeCard = ({ perek, mishnah, index, total, onLearned }) => {
-  const words = useMemo(() => mishnah.hebrew.split(/\s+/).filter(Boolean), [mishnah]);
-  // A fixed random order in which words get hidden.
-  const order = useMemo(() => {
-    const a = words.map((_, i) => i);
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }, [words]);
-
-  const LEVELS = [0, 0.2, 0.4, 0.6, 0.8, 1];
-  const [level, setLevel] = useState_m(0);
-  const [peeked, setPeeked] = useState_m(() => new Set());
-
-  const frac = LEVELS[level];
-  const hideCount = Math.round(frac * words.length);
-  const hidden = useMemo(() => new Set(order.slice(0, hideCount)), [order, hideCount]);
-  const atFull = level >= LEVELS.length - 1;
-  const shown = (i) => !hidden.has(i) || peeked.has(i);
-
-  const hideMore = () => { setLevel(l => Math.min(LEVELS.length - 1, l + 1)); setPeeked(new Set()); };
-  const showAll = () => { setLevel(0); setPeeked(new Set()); };
-  const peek = (i) => setPeeked(p => { const n = new Set(p); n.add(i); return n; });
-
-  return (
-    <>
-      <div className="memorize-progress">
-        <div className="memorize-progress-bar" style={{ width: `${(index / total) * 100}%` }} />
-      </div>
-      <div className="memorize-meta">Mishnah {index + 1} of {total}</div>
-      <div className="memorize-card fade-card">
-        <div className="memorize-num">{perek.num}:{mishnah.num}</div>
-        <div className="memorize-prompt">{mishnah.attribution.en}</div>
-        <div className="fade-text" dir="rtl">
-          {words.map((w, i) => (
-            <span
-              key={i}
-              className={`fade-word ${shown(i) ? '' : 'faded'}`}
-              onClick={() => { if (!shown(i)) peek(i); }}>
-              {w}
-            </span>
-          ))}
-        </div>
-        <div className="fade-en">{mishnah.english}</div>
-        <div className="fade-status">
-          {frac === 0
-            ? 'Read it through, then start hiding words.'
-            : atFull
-            ? 'The whole mishnah is hidden — recite it from memory.'
-            : `Reciting ${Math.round(frac * 100)}% from memory.`}
-        </div>
-      </div>
-      <div className="fade-controls">
-        {level > 0 && <button className="fade-btn-soft" onClick={showAll}>Show all</button>}
-        {atFull ? (
-          <button className="fade-btn" onClick={onLearned}>I have learned this →</button>
-        ) : (
-          <button className="fade-btn" onClick={hideMore}>
-            {frac === 0 ? 'Start hiding words' : 'Hide more'}
-          </button>
-        )}
-      </div>
-    </>
-  );
-};
-
-// ============================================================
-// ReciteCard — recite the mishnah, self-grade word by word
+// Memorize mode — ReciteCard: recite the mishnah, self-grade word by word
 // ============================================================
 const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
   const [lang, setLang] = useS_o('he');
@@ -332,7 +258,6 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
 const MemorizeMode = ({ perek, onClose }) => {
   const [cards] = useState_m(() => perek.mishnayot.filter(m => !m.stub));
   const [idx, setIdx] = useState_m(0);
-  const [mode, setMode] = useState_m('fade'); // 'fade' | 'recite'
 
   const total = cards.length;
   const card = idx < total ? cards[idx] : null;
@@ -344,14 +269,7 @@ const MemorizeMode = ({ perek, onClose }) => {
         <div className="memorize-head">
           <div>
             <div className="memorize-eyebrow">Memorize · Perek {perek.num}</div>
-            <div className="memorize-mode-tabs">
-              <button className={`memorize-mode-tab ${mode === 'fade' ? 'active' : ''}`} onClick={() => setMode('fade')}>
-                <Icon name="eye" size={12} /> Fade to memory
-              </button>
-              <button className={`memorize-mode-tab ${mode === 'recite' ? 'active' : ''}`} onClick={() => setMode('recite')}>
-                <Icon name="mic" size={12} /> Recite aloud
-              </button>
-            </div>
+            <div className="memorize-title">Recite aloud</div>
           </div>
           <button className="icon-btn" onClick={onClose} style={{color:'var(--ink)'}}><Icon name="close" /></button>
         </div>
@@ -375,7 +293,7 @@ const MemorizeMode = ({ perek, onClose }) => {
               <button className="memorize-done-btn" onClick={onClose}>Done</button>
             </div>
           </div>
-        ) : mode === 'recite' ? (
+        ) : (
           <ReciteCard
             key={`recite-${perek.num}-${card.num}`}
             perek={perek}
@@ -383,15 +301,6 @@ const MemorizeMode = ({ perek, onClose }) => {
             index={idx}
             total={total}
             onDone={() => setIdx(i => i + 1)}
-          />
-        ) : (
-          <FadeCard
-            key={`${perek.num}-${card.num}`}
-            perek={perek}
-            mishnah={card}
-            index={idx}
-            total={total}
-            onLearned={() => setIdx(i => i + 1)}
           />
         )}
       </div>

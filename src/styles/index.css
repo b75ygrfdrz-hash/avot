@@ -7684,35 +7684,7 @@ html.dark .home-mesorah-card {
 .mc-pop .mc-pop-link + .mc-pop-link { margin-top: 7px; }
 .mc-pop-link-soft { opacity: 0.78; }
 
-/* Memorize mode — fade to memory */
-/* ── Mode tabs ────────────────────────────────────────────── */
-.memorize-mode-tabs {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-}
-.memorize-mode-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.memorize-mode-tab:hover { color: var(--ink); border-color: var(--ink-soft); }
-.memorize-mode-tab.active {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-html.dark .memorize-mode-tab.active { background: var(--paper); color: var(--night); border-color: var(--paper); }
-
+/* Memorize mode — recite aloud */
 /* ── Recite card ──────────────────────────────────────────── */
 .memorize-card.recite-card {
   cursor: default;
@@ -7944,48 +7916,7 @@ html.dark .recite-legend--correct { color: #4ade80; background: rgba(74,222,128,
 html.dark .recite-legend--wrong   { color: #f87171; background: rgba(248,113,113,0.1); }
 html.dark .recite-legend--missed  { color: #fb923c; background: rgba(251,146,60,0.1); }
 
-.memorize-card.fade-card {
-  cursor: default;
-  min-height: 0;
-  padding: 20px 24px;
-}
-.memorize-card.fade-card:hover { border-color: var(--border); }
-.fade-text {
-  font-family: var(--hebrew);
-  font-size: 21px;
-  line-height: 1.7;
-  direction: rtl;
-  text-align: right;
-  color: var(--ink);
-  margin: 12px 0 10px;
-}
-.fade-word {
-  display: inline-block;
-  margin: 3px 1px;
-  padding: 0 3px;
-  border-radius: 5px;
-  transition: color .45s ease, background-color .45s ease;
-}
-.fade-word.faded {
-  color: transparent;
-  background: var(--bg-deep);
-  cursor: pointer;
-}
-.fade-word.faded:hover { background: var(--border); }
-.fade-en {
-  font-family: var(--serif);
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-.fade-status {
-  font-family: var(--display);
-  font-style: italic;
-  font-size: 15px;
-  color: var(--muted);
-  text-align: center;
-  margin-top: 12px;
-}
+/* Shared by the recite controls row (Try again / Next mishnah) */
 .fade-controls {
   display: flex;
   gap: 10px;
@@ -7996,8 +7927,6 @@ html.dark .recite-legend--missed  { color: #fb923c; background: rgba(251,146,60,
 .memorize-head { margin-bottom: 14px; }
 .memorize-progress { margin-bottom: 10px; }
 .memorize-meta { margin: 0 0 12px; }
-.fade-card .memorize-num { font-size: 24px; margin-bottom: 2px; }
-.fade-card .memorize-prompt { margin-bottom: 2px; }
 .fade-btn {
   padding: 12px 26px;
   border-radius: 999px;
@@ -8019,9 +7948,6 @@ html.dark .recite-legend--missed  { color: #fb923c; background: rgba(251,146,60,
   transition: background-color .15s ease;
 }
 .fade-btn-soft:hover { background: var(--bg-deep); }
-html.dark .fade-text { color: rgba(255, 255, 255, 0.92); }
-html.dark .fade-word.faded { background: rgba(255, 255, 255, 0.1); }
-html.dark .fade-word.faded:hover { background: rgba(255, 255, 255, 0.17); }
 html.dark .fade-btn { background: var(--gold); color: var(--night); }
 html.dark .fade-btn-soft { border-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.8); }
 html.dark .fade-btn-soft:hover { background: rgba(255, 255, 255, 0.06); }
