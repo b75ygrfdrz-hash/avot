@@ -94,9 +94,8 @@ const IdeasBoard = ({ onClose, userId }) => {
   const [loading, setLoading] = useS(true);
   const [draft, setDraft] = useS('');
   const [draftNotes, setDraftNotes] = useS('');
-  const [filter, setFilter] = useS('all');
   const [editingId, setEditingId] = useS(null);
-  const [dragOverId, setDragOverId] = useS(null);
+  const [dragOverCol, setDragOverCol] = useS(null);
   const dragIdRef = useR(null);
   const titleRef = useR(null);
   const loadedRef = useR(false);
@@ -141,41 +140,61 @@ const IdeasBoard = ({ onClose, userId }) => {
     }
   }, [ideas]);
 
-  function onDragStart(e, id) {
+  // ---- Kanban drag + drop ----
+  // Move a card to a status. If beforeId is given, insert it just before that
+  // card (lets you reorder within a column); otherwise append to the column.
+  function moveCard(fromId, toStatus, beforeId = null) {
+    setIdeas(prev => {
+      const fromIdx = prev.findIndex(i => i.id === fromId);
+      if (fromIdx < 0) return prev;
+      const moved = { ...prev[fromIdx], status: toStatus };
+      const arr = prev.filter(i => i.id !== fromId);
+      if (beforeId && beforeId !== fromId) {
+        const toIdx = arr.findIndex(i => i.id === beforeId);
+        arr.splice(toIdx < 0 ? arr.length : toIdx, 0, moved);
+      } else {
+        arr.push(moved);
+      }
+      return arr;
+    });
+  }
+
+  function onCardDragStart(e, id) {
     dragIdRef.current = id;
     e.dataTransfer.effectAllowed = 'move';
   }
-  function onDragOver(e, id) {
+  function onCardDragEnd() { dragIdRef.current = null; setDragOverCol(null); }
+
+  function onColDragOver(e, statusId) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    if (id !== dragIdRef.current) setDragOverId(id);
+    setDragOverCol(statusId);
   }
-  function onDragLeave() { setDragOverId(null); }
-  function onDrop(e, targetId) {
+  function onColDragLeave(e) {
+    // Only clear when leaving the column itself, not its children.
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOverCol(null);
+  }
+  function onColDrop(e, statusId) {
     e.preventDefault();
-    setDragOverId(null);
+    setDragOverCol(null);
     const fromId = dragIdRef.current;
-    if (!fromId || fromId === targetId) return;
-    setIdeas(prev => {
-      const arr = [...prev];
-      const fromIdx = arr.findIndex(i => i.id === fromId);
-      const toIdx   = arr.findIndex(i => i.id === targetId);
-      if (fromIdx < 0 || toIdx < 0) return prev;
-      const [item] = arr.splice(fromIdx, 1);
-      arr.splice(toIdx, 0, item);
-      return arr;
-    });
+    if (fromId) moveCard(fromId, statusId);
     dragIdRef.current = null;
   }
-  function onDragEnd() { setDragOverId(null); dragIdRef.current = null; }
+  function onCardDrop(e, targetCard) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCol(null);
+    const fromId = dragIdRef.current;
+    if (fromId && fromId !== targetCard.id) moveCard(fromId, targetCard.status, targetCard.id);
+    dragIdRef.current = null;
+  }
 
   const counts = useMemo(() => {
     const c = { all: ideas.length };
     STATUSES.forEach(s => { c[s.id] = ideas.filter(i => i.status === s.id).length; });
     return c;
   }, [ideas]);
-
-  const filtered = filter === 'all' ? ideas : ideas.filter(i => i.status === filter);
 
   function add() {
     const title = draft.trim();
@@ -276,70 +295,69 @@ const IdeasBoard = ({ onClose, userId }) => {
           </div>
         </div>
 
-        <div className="ideas-filters">
-          <button className={`ideas-filter ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-            All <span className="ideas-count">{counts.all}</span>
-          </button>
-          {STATUSES.map(s => (
-            <button key={s.id}
-              className={`ideas-filter ${filter === s.id ? 'active' : ''}`}
-              onClick={() => setFilter(s.id)}>
-              <span className="ideas-dot" style={{ background: s.color }} />
-              {s.label} <span className="ideas-count">{counts[s.id] || 0}</span>
-            </button>
-          ))}
-        </div>
+        {ideas.length === 0 && (
+          <div className="ideas-empty">No ideas yet. Type one above and hit Enter to add your first card.</div>
+        )}
 
-        <div className="ideas-list">
-          {filtered.length === 0 && (
-            <div className="ideas-empty">
-              {ideas.length === 0
-                ? 'No ideas yet. Type one above and hit Enter.'
-                : 'Nothing in this status.'}
-            </div>
-          )}
-          {filtered.map(i => {
-            const s = STATUSES.find(x => x.id === i.status) || STATUSES[0];
-            const editing = editingId === i.id;
+        <div className="ideas-columns">
+          {STATUSES.map(s => {
+            const cards = ideas.filter(i => i.status === s.id);
             return (
-              <div key={i.id}
-                className={`ideas-card${dragOverId === i.id ? ' ideas-card--drop-target' : ''}`}
-                draggable
-                onDragStart={e => onDragStart(e, i.id)}
-                onDragOver={e => onDragOver(e, i.id)}
-                onDragLeave={onDragLeave}
-                onDrop={e => onDrop(e, i.id)}
-                onDragEnd={onDragEnd}
+              <div key={s.id}
+                className={`ideas-column${dragOverCol === s.id ? ' ideas-column--drop' : ''}`}
+                onDragOver={e => onColDragOver(e, s.id)}
+                onDragLeave={onColDragLeave}
+                onDrop={e => onColDrop(e, s.id)}
               >
-                <span className="ideas-drag-handle" title="Drag to reorder">⠿</span>
-                <button className="ideas-status" style={{ background: s.color }} onClick={() => cycleStatus(i)} title="Click to cycle status">
-                  {s.label}
-                </button>
-                <div className="ideas-card-body">
-                  {editing ? (
-                    <>
-                      <input className="ideas-edit-title" defaultValue={i.title}
-                        onBlur={e => { updateIdea(i.id, { title: e.target.value.trim() || i.title }); }} />
-                      <textarea className="ideas-edit-notes" defaultValue={i.notes} rows={3}
-                        onBlur={e => { updateIdea(i.id, { notes: e.target.value }); }} />
-                    </>
-                  ) : (
-                    <>
-                      <div className="ideas-card-title">{i.title}</div>
-                      {i.notes && <div className="ideas-card-notes">{i.notes}</div>}
-                      <div className="ideas-card-date">
-                        {new Date(i.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    </>
-                  )}
+                <div className="ideas-col-head">
+                  <span className="ideas-dot" style={{ background: s.color }} />
+                  <span className="ideas-col-label">{s.label}</span>
+                  <span className="ideas-count">{cards.length}</span>
                 </div>
-                <div className="ideas-card-actions">
-                  <button className="ideas-icon-btn" onClick={() => setEditingId(editing ? null : i.id)} title={editing ? 'Done' : 'Edit'}>
-                    <Icon name={editing ? 'check' : 'edit'} size={13} />
-                  </button>
-                  <button className="ideas-icon-btn ideas-danger" onClick={() => removeIdea(i.id)} title="Delete">
-                    <Icon name="trash" size={13} />
-                  </button>
+                <div className="ideas-col-cards">
+                  {cards.length === 0 && <div className="ideas-col-empty">Drop a card here</div>}
+                  {cards.map(i => {
+                    const editing = editingId === i.id;
+                    return (
+                      <div key={i.id}
+                        className="ideas-card"
+                        draggable
+                        onDragStart={e => onCardDragStart(e, i.id)}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={e => onCardDrop(e, i)}
+                        onDragEnd={onCardDragEnd}
+                      >
+                        <span className="ideas-drag-handle" title="Drag to another column">⠿</span>
+                        <div className="ideas-card-body">
+                          {editing ? (
+                            <>
+                              <input className="ideas-edit-title" defaultValue={i.title}
+                                onBlur={e => { updateIdea(i.id, { title: e.target.value.trim() || i.title }); }} />
+                              <textarea className="ideas-edit-notes" defaultValue={i.notes} rows={3}
+                                onBlur={e => { updateIdea(i.id, { notes: e.target.value }); }} />
+                            </>
+                          ) : (
+                            <>
+                              <div className="ideas-card-title">{i.title}</div>
+                              {i.notes && <div className="ideas-card-notes">{i.notes}</div>}
+                              <div className="ideas-card-date">
+                                {new Date(i.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="ideas-card-actions">
+                          <button className="ideas-icon-btn" onClick={() => cycleStatus(i)} title="Move to next column">→</button>
+                          <button className="ideas-icon-btn" onClick={() => setEditingId(editing ? null : i.id)} title={editing ? 'Done' : 'Edit'}>
+                            <Icon name={editing ? 'check' : 'edit'} size={13} />
+                          </button>
+                          <button className="ideas-icon-btn ideas-danger" onClick={() => removeIdea(i.id)} title="Delete">
+                            <Icon name="trash" size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

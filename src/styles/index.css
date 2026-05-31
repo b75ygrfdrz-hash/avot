@@ -10927,11 +10927,12 @@ html.dark .ideas-close { color: #ece7dd; border-color: rgba(255,255,255,0.12); }
   flex: 1;
   overflow-y: auto;
   padding: 28px 24px 60px;
-  max-width: 760px;
+  max-width: 1120px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
+.ideas-compose { max-width: 640px; }
 
 .ideas-compose {
   background: var(--paper);
@@ -11040,13 +11041,13 @@ html.dark .ideas-filter.active { background: #FDFAF4; color: #0F0D0A; border-col
 }
 .ideas-card {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  gap: 14px;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
   align-items: flex-start;
   background: var(--paper);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 12px;
   cursor: grab;
   transition: box-shadow 0.15s, border-color 0.15s, opacity 0.15s;
 }
@@ -11125,6 +11126,58 @@ html.dark .ideas-card { background: #1a1612; border-color: rgba(255,255,255,0.08
 html.dark .ideas-icon-btn:hover { background: rgba(255,255,255,0.06); color: #ece7dd; }
 .ideas-icon-btn.ideas-danger:hover { color: #c46e72; }
 
+/* ---- Kanban columns ---- */
+.ideas-columns {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.ideas-column {
+  flex: 1 1 0;
+  min-width: 240px;
+  background: rgba(0,0,0,0.025);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.15s, border-color 0.15s;
+}
+html.dark .ideas-column { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.ideas-column--drop {
+  background: rgba(198,154,48,0.1);
+  border-color: var(--gold, #C69A30);
+}
+.ideas-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 4px 6px 12px;
+}
+.ideas-col-label { flex: 1; }
+.ideas-col-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 48px;
+}
+.ideas-col-empty {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 18px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  opacity: 0.7;
+}
+
 /* Mobile */
 @media (max-width: 480px) {
   .ideas-header { padding: 12px 14px !important; }
@@ -11132,9 +11185,10 @@ html.dark .ideas-icon-btn:hover { background: rgba(255,255,255,0.06); color: #ec
   .ideas-sub { font-size: 10px !important; }
   .ideas-body { padding: 18px 12px 80px !important; }
   .ideas-compose { padding: 12px !important; }
-  .ideas-card { padding: 12px !important; gap: 10px !important; grid-template-columns: auto auto 1fr; }
-  .ideas-drag-handle { display: none; }
-  .ideas-status { justify-self: start; }
+  .ideas-card { padding: 12px !important; }
+  /* Columns become full-width and stack so cards stay readable at 320px. */
+  .ideas-columns { flex-direction: column; overflow-x: visible; }
+  .ideas-column { min-width: 0; width: 100%; }
   .ideas-card-actions { justify-self: end; }
 }
 
