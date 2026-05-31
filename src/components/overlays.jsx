@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { getColoringFor, SimpleColoring } from './kidsColoring.jsx';
+import { createVoiceRecognition, alignRecitation } from '../lib/voice.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -143,9 +144,195 @@ const FadeCard = ({ perek, mishnah, index, total, onLearned }) => {
   );
 };
 
+// ============================================================
+// ReciteCard — recite the mishnah, self-grade word by word
+// ============================================================
+const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
+  const [lang, setLang] = useS_o('he');
+  const [phase, setPhase] = useS_o('idle'); // idle | recording | results
+  const [interim, setInterim] = useS_o('');
+  // statuses: array of 'correct'|'wrong'|'neutral' per word, user-tappable
+  const [statuses, setStatuses] = useS_o(null);
+  const [capturedText, setCapturedText] = useS_o('');
+  const recRef = useR(null);
+  const fullTranscriptRef = useR('');
+  const isRecordingRef = useR(false);
+
+  const rawText = lang === 'he' ? (mishnah.hebrew || '') : (mishnah.english || '');
+  // Strip punctuation from expected words so matching isn't thrown off by commas/periods
+  const wordTokens = rawText.split(/\s+/).map(w => w.replace(/[.,:;!?״׳]/g, '')).filter(Boolean);
+
+  useE_o(() => {
+    isRecordingRef.current = false;
+    recRef.current?.stop();
+    setPhase('idle'); setInterim(''); setStatuses(null);
+    fullTranscriptRef.current = '';
+  }, [mishnah.num, lang]);
+
+  const startRecording = () => {
+    fullTranscriptRef.current = '';
+    setInterim('');
+    setPhase('recording');
+    isRecordingRef.current = true;
+
+    const launch = () => {
+      if (!isRecordingRef.current) return;
+      const rec = createVoiceRecognition({
+        continuous: false,
+        lang: lang === 'he' ? 'he-IL' : 'en-US',
+        onInterim: (t) => setInterim(t),
+        onFinal: (t) => {
+          fullTranscriptRef.current = (fullTranscriptRef.current + ' ' + t).trim();
+          setInterim('');
+        },
+        onError: (err) => {
+          if (err !== 'no-speech' && err !== 'aborted') isRecordingRef.current = false;
+        },
+        onEnd: () => { if (isRecordingRef.current) setTimeout(launch, 200); },
+      });
+      if (!rec.supported) { isRecordingRef.current = false; setPhase('idle'); return; }
+      recRef.current = rec;
+      rec.start();
+    };
+    launch();
+  };
+
+  const reveal = () => {
+    isRecordingRef.current = false;
+    recRef.current?.stop();
+
+    const full = (fullTranscriptRef.current + ' ' + interim).trim();
+    setCapturedText(full);
+    const spokenWords = full.split(/\s+/).filter(Boolean);
+
+    let initial;
+    if (spokenWords.length > 0) {
+      // Run alignment on whatever we got — even a few words is useful
+      const aligned = alignRecitation(spokenWords, wordTokens, lang);
+      // correct → green, anything else → neutral (user confirms)
+      initial = aligned.map(r => r.status === 'correct' ? 'correct' : 'neutral');
+    } else {
+      // No transcript at all — start all green, user taps what they missed
+      initial = wordTokens.map(() => 'correct');
+    }
+    setStatuses(initial);
+    setPhase('results');
+  };
+
+  const toggleWord = (i) => {
+    setStatuses(prev => {
+      const next = [...prev];
+      // cycle: neutral → correct → wrong → correct
+      next[i] = prev[i] === 'correct' ? 'wrong' : 'correct';
+      return next;
+    });
+  };
+
+  const reset = () => {
+    isRecordingRef.current = false;
+    recRef.current?.stop();
+    setPhase('idle'); setInterim(''); setStatuses(null);
+    fullTranscriptRef.current = '';
+  };
+
+  const score = statuses ? statuses.filter(s => s === 'correct').length : 0;
+  const pct   = statuses ? Math.round((score / statuses.length) * 100) : 0;
+
+  return (
+    <>
+      <div className="memorize-progress">
+        <div className="memorize-progress-bar" style={{ width: `${(index / total) * 100}%` }} />
+      </div>
+      <div className="memorize-meta">Mishnah {index + 1} of {total}</div>
+
+      <div className="memorize-card recite-card">
+        <div className="memorize-num">{perek.num}:{mishnah.num}</div>
+        <div className="memorize-prompt">{mishnah.attribution.en}</div>
+
+        {phase === 'idle' && (
+          <div className="recite-lang-toggle">
+            <button className={`recite-lang-btn ${lang === 'he' ? 'active' : ''}`} onClick={() => setLang('he')}>עברית Hebrew</button>
+            <button className={`recite-lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>English</button>
+          </div>
+        )}
+
+        {/* Text — blurred while reciting, tappable after reveal */}
+        <div className={`recite-text ${lang === 'he' ? 'recite-text--he' : 'recite-text--en'}`}
+             dir={lang === 'he' ? 'rtl' : 'ltr'}>
+          {(phase === 'idle' || phase === 'recording') && wordTokens.map((w, i) => (
+            <span key={i} className="recite-word recite-word--blurred">{w}</span>
+          ))}
+          {phase === 'results' && statuses && wordTokens.map((w, i) => (
+            <span key={i}
+              className={`recite-word recite-word--${statuses[i]} recite-word--tappable`}
+              onClick={() => toggleWord(i)}
+              title="Tap to toggle correct / wrong">
+              {w}
+            </span>
+          ))}
+        </div>
+
+        {/* Idle */}
+        {phase === 'idle' && (
+          <div className="recite-idle">
+            <button className="recite-mic-btn" onClick={startRecording}>
+              <Icon name="mic" size={26} />
+            </button>
+            <p className="recite-idle-hint">
+              {lang === 'he' ? 'Tap to start — recite the mishnah in Hebrew from memory'
+                             : 'Tap to start — recite the English translation from memory'}
+            </p>
+          </div>
+        )}
+
+        {/* Recording */}
+        {phase === 'recording' && (
+          <div className="recite-recording">
+            <div className="recite-pulse-ring"><div className="recite-pulse-dot" /></div>
+            <p className="recite-recording-label">Listening…</p>
+            {interim && <p className="recite-live-text"><em>{interim}</em></p>}
+            <button className="recite-done-btn" onClick={reveal}>
+              <Icon name="check" size={14} /> Done — reveal
+            </button>
+          </div>
+        )}
+
+        {/* Results: score + tap-to-grade hint */}
+        {phase === 'results' && statuses && (
+          <div className="recite-score">
+            <div className="recite-score-num">
+              <span className="recite-score-big">{score}</span>
+              <span className="recite-score-sep">/</span>
+              <span className="recite-score-total">{statuses.length}</span>
+            </div>
+            <div className="recite-score-pct">{pct}% correct</div>
+            <p className="recite-tap-hint">Tap any word to mark it wrong (grey → red) or correct (→ green)</p>
+            {capturedText && (
+              <details className="recite-transcript-details">
+                <summary>What the mic heard</summary>
+                <p className="recite-transcript-text" dir={lang === 'he' ? 'rtl' : 'ltr'}>{capturedText}</p>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="fade-controls">
+        {phase === 'results' && (
+          <>
+            <button className="fade-btn-soft" onClick={reset}>Try again</button>
+            <button className="fade-btn" onClick={onDone}>Next mishnah →</button>
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+
 const MemorizeMode = ({ perek, onClose }) => {
   const [cards] = useState_m(() => perek.mishnayot.filter(m => !m.stub));
   const [idx, setIdx] = useState_m(0);
+  const [mode, setMode] = useState_m('fade'); // 'fade' | 'recite'
 
   const total = cards.length;
   const card = idx < total ? cards[idx] : null;
@@ -156,8 +343,15 @@ const MemorizeMode = ({ perek, onClose }) => {
       <div className="memorize" onClick={e => e.stopPropagation()}>
         <div className="memorize-head">
           <div>
-            <div className="memorize-eyebrow">Memorize · Fade to memory</div>
-            <div className="memorize-title">Perek {perek.num}</div>
+            <div className="memorize-eyebrow">Memorize · Perek {perek.num}</div>
+            <div className="memorize-mode-tabs">
+              <button className={`memorize-mode-tab ${mode === 'fade' ? 'active' : ''}`} onClick={() => setMode('fade')}>
+                <Icon name="eye" size={12} /> Fade to memory
+              </button>
+              <button className={`memorize-mode-tab ${mode === 'recite' ? 'active' : ''}`} onClick={() => setMode('recite')}>
+                <Icon name="mic" size={12} /> Recite aloud
+              </button>
+            </div>
           </div>
           <button className="icon-btn" onClick={onClose} style={{color:'var(--ink)'}}><Icon name="close" /></button>
         </div>
@@ -181,6 +375,15 @@ const MemorizeMode = ({ perek, onClose }) => {
               <button className="memorize-done-btn" onClick={onClose}>Done</button>
             </div>
           </div>
+        ) : mode === 'recite' ? (
+          <ReciteCard
+            key={`recite-${perek.num}-${card.num}`}
+            perek={perek}
+            mishnah={card}
+            index={idx}
+            total={total}
+            onDone={() => setIdx(i => i + 1)}
+          />
         ) : (
           <FadeCard
             key={`${perek.num}-${card.num}`}
