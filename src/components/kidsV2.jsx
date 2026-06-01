@@ -1352,6 +1352,12 @@ const KidsV2Home = ({ data, onOpenLesson, onClose }) => {
       <Hud state={state} onClose={onClose} onShowStreak={() => setShowStreak(true)} onShowLeaderboard={() => setShowLeaderboard(true)} />
       {showStreak && <StreakCalendar state={state} onClose={() => setShowStreak(false)} />}
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
+
+      <div className="kv2-partner">
+        <span className="kv2-partner-label">In partnership with</span>
+        <img className="kv2-partner-logo" src="/generation-sinai.png" alt="Generation Sinai" />
+      </div>
+
       <DailyGoal state={state} />
       <div className="kv2-hero">
         <div className="kv2-hero-eyebrow">פִּרְקֵי אָבוֹת · Pirkei Avot</div>
