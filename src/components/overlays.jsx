@@ -84,6 +84,7 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
   const fullTranscriptRef = useR('');
   const altWordsRef = useR([]); // extra recognizer guesses, pooled as words
   const isRecordingRef = useR(false);
+  const interimRef = useR(''); // latest not-yet-final words, so a restart can't drop them
 
   const rawText = lang === 'he' ? (mishnah.hebrew || '') : (mishnah.english || '');
   // Strip punctuation from expected words so matching isn't thrown off by commas/periods
@@ -107,11 +108,12 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
     const launch = () => {
       if (!isRecordingRef.current) return;
       const rec = createVoiceRecognition({
-        continuous: false,
+        continuous: true,
         lang: lang === 'he' ? 'he-IL' : 'en-US',
-        onInterim: (t) => setInterim(t),
+        onInterim: (t) => { interimRef.current = t; setInterim(t); },
         onFinal: (t, alts) => {
           fullTranscriptRef.current = (fullTranscriptRef.current + ' ' + t).trim();
+          interimRef.current = '';
           if (alts && alts.length) {
             for (const a of alts) {
               for (const w of a.split(/\s+/)) { if (w) altWordsRef.current.push(w); }
@@ -122,7 +124,14 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
         onError: (err) => {
           if (err !== 'no-speech' && err !== 'aborted') isRecordingRef.current = false;
         },
-        onEnd: () => { if (isRecordingRef.current) setTimeout(launch, 200); },
+        onEnd: () => {
+          // Keep any not-yet-final tail before a restart drops it.
+          if (interimRef.current) {
+            fullTranscriptRef.current = (fullTranscriptRef.current + ' ' + interimRef.current).trim();
+            interimRef.current = '';
+          }
+          if (isRecordingRef.current) setTimeout(launch, 120);
+        },
       });
       if (!rec.supported) { isRecordingRef.current = false; setPhase('idle'); return; }
       recRef.current = rec;
@@ -135,7 +144,8 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
     isRecordingRef.current = false;
     recRef.current?.stop();
 
-    const full = (fullTranscriptRef.current + ' ' + interim).trim();
+    const full = (fullTranscriptRef.current + ' ' + interimRef.current).trim();
+    interimRef.current = '';
     setCapturedText(full);
     const spokenWords = full.split(/\s+/).filter(Boolean);
 
