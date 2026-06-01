@@ -219,77 +219,73 @@ export function wordsMatch(spoken, expected, lang) {
 // Returns one { expected, spoken, status } per expected word.
 
 export function alignRecitation(spokenWords, expectedWords, lang) {
-  const results = [];
-  let si = 0, ei = 0;
+  const E = expectedWords, S = spokenWords;
+  const n = E.length, m = S.length;
   const join = arr => arr.join(lang === 'he' ? '' : ' ');
 
-  while (ei < expectedWords.length) {
-    if (si >= spokenWords.length) {
-      results.push({ expected: expectedWords[ei++], spoken: null, status: 'missed' });
-      continue;
-    }
+  if (n === 0) return [];
 
-    // A) direct match
-    if (wordsMatch(spokenWords[si], expectedWords[ei], lang)) {
-      results.push({ expected: expectedWords[ei], spoken: spokenWords[si], status: 'correct' });
-      si++; ei++; continue;
-    }
+  // Global (Needleman–Wunsch style) alignment over WORD sequences.
+  // A match costs 0; every other edit costs ≥1, so the optimal path
+  // maximises the number of correctly-recited words and never lets one
+  // misheard / extra / skipped token knock the rest out of sync.
+  const DEL = 1;   // expected word the reciter skipped (or ASR dropped)
+  const INS = 1;   // extra spoken token (filler, repeat, ASR noise)
+  const SUB = 2;   // spoken word aligned to expected but doesn't match
+  const INF = Infinity;
 
-    let handled = false;
+  const dp   = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(INF));
+  const back = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(null));
+  dp[0][0] = 0;
+  for (let i = 1; i <= n; i++) { dp[i][0] = dp[i - 1][0] + DEL; back[i][0] = { op: 'del' }; }
+  for (let j = 1; j <= m; j++) { dp[0][j] = dp[0][j - 1] + INS; back[0][j] = { op: 'ins' }; }
 
-    // B) ASR split: 2-3 spoken tokens = 1 expected word
-    for (let take = 2; take <= 3 && !handled; take++) {
-      if (si + take <= spokenWords.length) {
-        const merged = join(spokenWords.slice(si, si + take));
-        if (wordsMatch(merged, expectedWords[ei], lang)) {
-          results.push({ expected: expectedWords[ei], spoken: merged, status: 'correct' });
-          si += take; ei++; handled = true;
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      let best = INF, bop = null;
+      const consider = (cost, op) => { if (cost < best) { best = cost; bop = op; } };
+
+      // align E[i-1] with S[j-1] (match or substitution)
+      const matched = wordsMatch(S[j - 1], E[i - 1], lang);
+      consider(dp[i - 1][j - 1] + (matched ? 0 : SUB), { op: matched ? 'match' : 'sub', si: j - 1 });
+      // skip an expected word (missed) / drop an extra spoken word
+      consider(dp[i - 1][j] + DEL, { op: 'del' });
+      consider(dp[i][j - 1] + INS, { op: 'ins' });
+      // ASR split: one expected word came out as 2–3 spoken tokens
+      for (let k = 2; k <= 3; k++) {
+        if (j - k >= 0 && wordsMatch(join(S.slice(j - k, j)), E[i - 1], lang)) {
+          consider(dp[i - 1][j - k], { op: 'split', k, si: j - k });
         }
       }
-    }
-    if (handled) continue;
-
-    // C) ASR merge: 1 spoken token = 2 expected words
-    if (ei + 1 < expectedWords.length) {
-      const mergedExp = join(expectedWords.slice(ei, ei + 2));
-      if (wordsMatch(spokenWords[si], mergedExp, lang)) {
-        results.push({ expected: expectedWords[ei],     spoken: spokenWords[si], status: 'correct' });
-        results.push({ expected: expectedWords[ei + 1], spoken: spokenWords[si], status: 'correct' });
-        si++; ei += 2; handled = true;
+      // ASR merge: two expected words came out as one spoken token
+      if (i >= 2 && wordsMatch(S[j - 1], join(E.slice(i - 2, i)), lang)) {
+        consider(dp[i - 2][j - 1], { op: 'merge', si: j - 1 });
       }
-    }
-    if (handled) continue;
 
-    // D) extra inserted spoken word(s): look up to 3 ahead in spoken
-    for (let look = 1; look <= 3 && !handled; look++) {
-      if (si + look < spokenWords.length &&
-          wordsMatch(spokenWords[si + look], expectedWords[ei], lang)) {
-        si += look;
-        results.push({ expected: expectedWords[ei], spoken: spokenWords[si], status: 'correct' });
-        si++; ei++; handled = true;
-      }
+      dp[i][j] = best; back[i][j] = bop;
     }
-    if (handled) continue;
-
-    // E) skipped expected word(s): look up to 2 ahead in expected
-    for (let look = 1; look <= 2 && !handled; look++) {
-      if (ei + look < expectedWords.length &&
-          wordsMatch(spokenWords[si], expectedWords[ei + look], lang)) {
-        for (let k = 0; k < look; k++) {
-          results.push({ expected: expectedWords[ei + k], spoken: null, status: 'missed' });
-        }
-        results.push({ expected: expectedWords[ei + look], spoken: spokenWords[si], status: 'correct' });
-        si++; ei += look + 1; handled = true;
-      }
-    }
-    if (handled) continue;
-
-    // F) genuine mismatch
-    results.push({ expected: expectedWords[ei], spoken: spokenWords[si], status: 'wrong' });
-    si++; ei++;
   }
 
-  return results;
+  // Backtrack — emit exactly one result per expected word, in order.
+  const out = [];
+  let i = n, j = m;
+  while ((i > 0 || j > 0) && back[i][j]) {
+    const b = back[i][j];
+    if (b.op === 'del')        { out.push({ expected: E[i - 1], spoken: null, status: 'missed' }); i -= 1; }
+    else if (b.op === 'ins')   { j -= 1; }
+    else if (b.op === 'match') { out.push({ expected: E[i - 1], spoken: S[b.si], status: 'correct' }); i -= 1; j -= 1; }
+    else if (b.op === 'sub')   { out.push({ expected: E[i - 1], spoken: S[b.si], status: 'wrong' });   i -= 1; j -= 1; }
+    else if (b.op === 'split') { out.push({ expected: E[i - 1], spoken: join(S.slice(b.si, b.si + b.k)), status: 'correct' }); i -= 1; j -= b.k; }
+    else if (b.op === 'merge') {
+      out.push({ expected: E[i - 1], spoken: S[b.si], status: 'correct' });
+      out.push({ expected: E[i - 2], spoken: S[b.si], status: 'correct' });
+      i -= 2; j -= 1;
+    } else break;
+  }
+  // Any expected words left (i>0) were never reached → missed.
+  while (i > 0) { out.push({ expected: E[i - 1], spoken: null, status: 'missed' }); i -= 1; }
+  out.reverse();
+  return out;
 }
 
 // ── askClaude ──────────────────────────────────────────────────────────────
