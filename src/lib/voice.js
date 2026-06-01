@@ -10,7 +10,7 @@
 // Recall is prioritised over precision by design.
 // ---------------------------------------------------------------------------
 
-export function createVoiceRecognition({ onInterim, onFinal, onError, onEnd, continuous = false, lang = 'en-US' } = {}) {
+export function createVoiceRecognition({ onInterim, onFinal, onError, onEnd, continuous = false, lang = 'en-US', maxAlternatives = 5 } = {}) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     return { supported: false, start: () => {}, stop: () => {} };
@@ -20,20 +20,28 @@ export function createVoiceRecognition({ onInterim, onFinal, onError, onEnd, con
   r.continuous = continuous;
   r.interimResults = true;
   r.lang = lang;
-  r.maxAlternatives = 1;
+  // Ask the recognizer for several guesses, not just its single best one.
+  // Matching can then accept a word if ANY guess got it right — much more
+  // forgiving when the top guess mishears.
+  r.maxAlternatives = maxAlternatives;
 
   r.onresult = (e) => {
     let interim = '';
     let final = '';
+    const alternatives = []; // extra guesses for the final chunks
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) {
-        final += e.results[i][0].transcript;
+      const res = e.results[i];
+      if (res.isFinal) {
+        final += res[0].transcript;
+        for (let a = 1; a < res.length; a++) {
+          if (res[a] && res[a].transcript) alternatives.push(res[a].transcript);
+        }
       } else {
-        interim += e.results[i][0].transcript;
+        interim += res[0].transcript;
       }
     }
     if (interim) onInterim?.(interim);
-    if (final) onFinal?.(final.trim());
+    if (final) onFinal?.(final.trim(), alternatives);
   };
 
   r.onerror = (e) => onError?.(e.error);

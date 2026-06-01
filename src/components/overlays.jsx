@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { getColoringFor, SimpleColoring } from './kidsColoring.jsx';
-import { createVoiceRecognition, alignRecitation } from '../lib/voice.js';
+import { createVoiceRecognition, alignRecitation, wordsMatch } from '../lib/voice.js';
 
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const useS = useState, useE = useEffect, useR = useRef, useC = useCallback;
@@ -82,6 +82,7 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
   const [capturedText, setCapturedText] = useS_o('');
   const recRef = useR(null);
   const fullTranscriptRef = useR('');
+  const altWordsRef = useR([]); // extra recognizer guesses, pooled as words
   const isRecordingRef = useR(false);
 
   const rawText = lang === 'he' ? (mishnah.hebrew || '') : (mishnah.english || '');
@@ -93,10 +94,12 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
     recRef.current?.stop();
     setPhase('idle'); setInterim(''); setStatuses(null);
     fullTranscriptRef.current = '';
+    altWordsRef.current = [];
   }, [mishnah.num, lang]);
 
   const startRecording = () => {
     fullTranscriptRef.current = '';
+    altWordsRef.current = [];
     setInterim('');
     setPhase('recording');
     isRecordingRef.current = true;
@@ -107,8 +110,13 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
         continuous: false,
         lang: lang === 'he' ? 'he-IL' : 'en-US',
         onInterim: (t) => setInterim(t),
-        onFinal: (t) => {
+        onFinal: (t, alts) => {
           fullTranscriptRef.current = (fullTranscriptRef.current + ' ' + t).trim();
+          if (alts && alts.length) {
+            for (const a of alts) {
+              for (const w of a.split(/\s+/)) { if (w) altWordsRef.current.push(w); }
+            }
+          }
           setInterim('');
         },
         onError: (err) => {
@@ -137,6 +145,16 @@ const ReciteCard = ({ perek, mishnah, index, total, onDone }) => {
       const aligned = alignRecitation(spokenWords, wordTokens, lang);
       // correct → green, anything else → neutral (user confirms)
       initial = aligned.map(r => r.status === 'correct' ? 'correct' : 'neutral');
+      // Rescue pass: if the top guess missed a word but one of the
+      // recognizer's other guesses matches it, count it correct.
+      const altWords = altWordsRef.current;
+      if (altWords.length) {
+        initial = initial.map((st, i) =>
+          st === 'correct'
+            ? st
+            : (altWords.some(w => wordsMatch(w, wordTokens[i], lang)) ? 'correct' : st)
+        );
+      }
     } else {
       // No transcript at all — start all green, user taps what they missed
       initial = wordTokens.map(() => 'correct');
