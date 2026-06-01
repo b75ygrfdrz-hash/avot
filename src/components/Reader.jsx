@@ -165,9 +165,6 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
           </button>
           <div className="divider" />
           <button onClick={onShareQuote} data-tip="Beautiful shareable quote card"><Icon name="share" size={11} /> Share</button>
-          <button onClick={onSourceSheet} data-tip="Printable source sheet with commentary"><Icon name="print" size={11} /> Source sheet</button>
-          <div className="divider" />
-          <button onClick={onAsk} className="ask-toolbar-btn" data-tip="Ask a question about this mishnah — answered by AI"><Icon name="mic" size={11} /> Ask</button>
         </div>
 
         {layout === 'split' ? (
