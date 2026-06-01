@@ -8118,6 +8118,29 @@ html.dark .shabbat-act-primary {
   padding: 40px 24px 80px;
   background: #e8dfc8;
 }
+.shabbat-hero {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  background: #6dc1b4;
+  border-radius: 14px;
+  padding: 36px 40px 28px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(13,27,42,0.18);
+}
+.shabbat-hero-img {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  margin: 0 auto;
+}
+.shabbat-hero-tag {
+  margin-top: 18px;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+  color: #0d2b27;
+}
 .shabbat-sheet {
   max-width: 900px;
   margin: 0 auto;
@@ -8495,6 +8518,8 @@ html.dark .shabbat-act-primary {
   .shabbat-bar-actions { width: 100%; flex-wrap: wrap; }
   .shabbat-act { flex: 1; justify-content: center; }
   .shabbat-scroll { padding: 20px 12px 60px; }
+  .shabbat-hero { padding: 22px 16px 18px; margin-bottom: 18px; }
+  .shabbat-hero-tag { font-size: 15px; margin-top: 14px; }
   .shabbat-sheet { padding: 30px 22px; }
   .shabbat-sheet-theme-title { font-size: 24px; }
   .shabbat-he { font-size: 19px; }
