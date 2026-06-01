@@ -154,9 +154,10 @@ const VideosPanel = ({ mishnah }) => {
               {isPlaying && ytId && (
                 <div className="video-embed-wrap">
                   <iframe
-                    src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                    src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0`}
                     title={v.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
                     className="video-embed"
                   />
