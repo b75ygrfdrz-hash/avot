@@ -63,15 +63,19 @@ const Reader = ({ perek, mishnah, mishnahIdx, perekIdx, setMishnahIdx, setPerekI
       return mishnah.hebrew;
     }
     const tokens = mishnah.hebrew.split(/(\s+)/);
-    const lookupMap = {};
+    // Strip punctuation; "bare" also strips Hebrew vowel points / cantillation
+    // (U+0591–U+05C7) so a word still matches despite tiny vocalisation diffs.
+    const clean = s => s.trim().replace(/[׳״.,;:]/g, '');
+    const bare = s => clean(s).replace(/[֑-ׇ]/g, '');
+    const exactMap = {}, bareMap = {};
     mishnah.words.forEach(w => {
-      const clean = w.he.replace(/[׳״.,;:]/g, '');
-      lookupMap[clean] = w.en;
+      exactMap[clean(w.he)] = w.en;
+      bareMap[bare(w.he)] = w.en;
     });
     return tokens.map((tok, i) => {
-      const clean = tok.trim().replace(/[׳״.,;:]/g, '');
-      if (lookupMap[clean]) {
-        return <span key={i} className="word">{tok}<span className="tip">{lookupMap[clean]}</span></span>;
+      const en = exactMap[clean(tok)] ?? bareMap[bare(tok)];
+      if (en) {
+        return <span key={i} className="word">{tok}<span className="tip">{en}</span></span>;
       }
       return tok;
     });
