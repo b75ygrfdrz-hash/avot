@@ -1355,7 +1355,7 @@ const KidsV2Home = ({ data, onOpenLesson, onClose }) => {
 
       <div className="kv2-partner">
         <span className="kv2-partner-label">In partnership with</span>
-        <img className="kv2-partner-logo" src="/generation-sinai.png" alt="Generation Sinai" />
+        <img className="kv2-partner-logo" src="/generation-sinai.webp" alt="Generation Sinai" />
       </div>
 
       <DailyGoal state={state} />

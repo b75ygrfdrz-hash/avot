@@ -1,12 +1,12 @@
 import React from 'react';
 
 // ── Custom image assets (drop PNGs/JPGs into src/assets/icons/ and add here) ─
-import img_1_1 from '../assets/icons/stop-1-1.jpg';
-import img_1_2 from '../assets/icons/stop-1-2.jpg';
-import img_1_3 from '../assets/icons/stop-1-3.jpg';
-import img_1_4 from '../assets/icons/stop-1-4.jpg';
-import img_1_5 from '../assets/icons/stop-1-5.jpg';
-import img_1_6 from '../assets/icons/stop-1-6.jpg';
+import img_1_1 from '../assets/icons/stop-1-1.webp';
+import img_1_2 from '../assets/icons/stop-1-2.webp';
+import img_1_3 from '../assets/icons/stop-1-3.webp';
+import img_1_4 from '../assets/icons/stop-1-4.webp';
+import img_1_5 from '../assets/icons/stop-1-5.webp';
+import img_1_6 from '../assets/icons/stop-1-6.webp';
 
 // Map of stop key → image URL. When present, overrides the SVG icon.
 const STOP_IMAGES = {
