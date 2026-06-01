@@ -95,7 +95,7 @@ const ShabbatTable = ({ data, onClose, onJump }) => {
           <img
             className="shabbat-hero-img"
             src="/shabbos-project.png"
-            alt="The Shabbos Project — Switch off your screens. Switch on your life. Shabbos is a gift. Be present."
+            alt="The Shabbos Project — Keeping It Together"
           />
           <div className="shabbat-hero-tag">#TheShabbosProject</div>
         </div>
